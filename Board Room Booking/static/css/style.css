@@ -101,7 +101,7 @@ body {
   background:
     radial-gradient(ellipse 800px 600px at 50% 40%, rgba(156, 117, 48, .12), transparent 65%),
     linear-gradient(180deg, #fdfefe 0%, #f1f5f9 100%);
-  transition: opacity .8s var(--ease), visibility .8s var(--ease);
+  transition: opacity var(--ease), visibility var(--ease);
 }
 
 .entry-veil.entered {
@@ -219,24 +219,7 @@ body {
   justify-content: space-between;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex: 1;
-}
 
-.brand-logo {
-  display: block;
-  height: 60px;
-  width: auto;
-  max-width: 100%;
-  padding: 3px;
-}
-
-.brand-logo--compact {
-  display: none;
-}
 
 .header-left {
   display: flex;
@@ -1801,39 +1784,59 @@ body {
 /* ===================================================================
    PORTAL TITLE & LOGO STYLING
    =================================================================== */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-end;
+  flex: 1;
+}
+
 .brand-logo {
-  height: 32px;
-  width: 32px;
+  height: 42px;
+  width: auto;
   object-fit: contain;
   display: block;
 }
 
-.portal-title-full {
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.25;
+}
+
+.brand-title {
   font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 700;
-  color: var(--text);
-  margin-left: 10px;
+  color: #0b5e28;
+  /* The green color */
   white-space: nowrap;
 }
 
-.portal-title-short {
-  display: none;
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text);
-  margin-left: 10px;
+.brand-subtitle {
+  font-family: var(--font-body);
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #475569;
+  /* The slate color */
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
-  .portal-title-full {
+@media (max-width: 640px) {
+  .brand-subtitle {
     display: none;
   }
 
-  .portal-title-short {
-    display: inline-block;
+  .brand-title {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 440px) {
+  .brand-text {
+    display: none;
   }
 }
 

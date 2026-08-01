@@ -43,7 +43,6 @@
       </div><br>
       <span class="entry-eyebrow">Meeting Management System</span>
       <h1 class="entry-title">MMS </h1>
-      <p id="entry-subtitle" class="entry-sub">Walk the corridor and see what's free.</p>
       <button class="entry-btn" onclick="enterFloor()">
         <span>Step in</span>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -70,9 +69,11 @@
       </div>
 
       <div class="brand">
-        <img src="/static/images/logo.png" class="brand-logo" alt="MS Education Academy">
-
-
+        <div class="brand-text">
+          <div class="brand-title">MS Education Academy</div>
+          <div class="brand-subtitle">Meeting Management System</div>
+        </div>
+        <img src="/static/images/favicon.jpeg" class="brand-logo" alt="MS Education Academy">
       </div>
     </div>
   </header>
@@ -84,6 +85,7 @@
       <button class="drawer-close" onclick="closeSideDrawer()" aria-label="Close menu">✕</button>
 
       <div class="drawer-brand">
+        <img src="/static/images/favicon.jpeg" class="brand-logo" alt="MS Education Academy">
         <span class="drawer-portal-title">Meeting Management System </span>
       </div>
 
@@ -136,7 +138,8 @@
       <div class="about-card">
         <h2 class="about-welcome">Welcome!</h2>
         <p class="about-text">
-          The Meeting Management System (MMS) is the centralized platform for planning, scheduling, coordinating, and
+          The <b>Meeting Management System (MMS)</b> is the centralized platform for planning, scheduling, coordinating,
+          and
           managing meetings conducted at the Corporate Office. The system is designed to enhance collaboration, optimize
           the utilization of conference facilities, reduce unnecessary travel by branch Principals and staff, and ensure
           that meetings are conducted in a well-planned and efficient manner.
@@ -222,18 +225,13 @@
 
     <!-- ── BOOK VIEW ── -->
     <section id="view-book" class="view" aria-labelledby="tab-book">
-      <div class="view-header">
+      <!--<div class="view-header">
         <div>
           <p class="view-eyebrow">Front desk</p>
           <h1 class="view-title">Reserve a room</h1>
         </div>
         <p class="view-note">An admin needs to sign off before a booking goes on the board.</p>
-      </div>
-
-
-
-
-
+      </div> -->
       <div id="admin-login-section" class="booking-form">
         <p class="form-kicker">Admin sign-off</p>
         <div class="form-row">
@@ -256,7 +254,7 @@
       <form id="booking-form" class="booking-form hidden" onsubmit="submitBooking(event)" novalidate>
         <p class="form-kicker">Booking details</p>
         <div class="form-group">
-          <label for="book-room">Room *</label>
+          <label for="book-room">Venue*</label> <!-- Room name as replacing Venue-->
           <select id="book-room" required>
             <option value="">Select a room…</option>
           </select>
@@ -271,18 +269,20 @@
         </div>
 
         <div class="form-group">
-          <label for="book-title">Meeting title *</label>
+          <label for="book-title">Agenda*</label> <!-- Meeting Title as replacing Agenda Name -->
           <input id="book-title" type="text" maxlength="120" placeholder="e.g. Executive Strategy Meeting" required />
         </div>
 
         <div class="form-group">
-          <label for="book-name">Organiser *</label>
+          <label for="book-name">Meeting Called By *</label>
           <input id="book-name" type="text" maxlength="80" placeholder="Your name" required />
+          <!-- Organiser name as replacing Meeting Called By-->
         </div>
 
         <div class="form-group">
-          <label for="book-email">Organiser's Email *</label>
+          <label for="book-email">Email *</label>
           <input id="book-email" type="email" placeholder="e.g. name@mseducation.academy" required />
+          <!-- Organiser Email as replacing Meeting Called Email-->
         </div>
 
         <div class="form-group">
