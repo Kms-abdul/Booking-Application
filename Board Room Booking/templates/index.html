@@ -6,13 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="description"
     content="Walk the floor, see which board rooms are free, and book one — no login required for browsing." />
-  <title>CRBS - MS Education Academy</title>
+  <title>MMS - MS Education Academy</title>
 
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="CRBS" />
+  <meta name="apple-mobile-web-app-title" content="MMS " />
   <!--<link rel="apple-touch-icon" href="/icon-192.png" />-->
   <link rel="icon" type="image/jpeg" href="/static/favicon.jpeg">
   <link rel="shortcut icon" href="/static/favicon.jpeg">
@@ -39,10 +39,10 @@
   <div id="entry-veil" class="entry-veil">
     <div class="entry-mark">
       <div class="entry-logo">
-        <img src="/static/images/logo.png" class="brand-logo" alt="MSEA" width="80%" height="20%">
+        <img src="/static/images/logo.png" class="entry-logo-img" alt="MSEA">
       </div><br>
       <span class="entry-eyebrow">Meeting Management System</span>
-      <h1 class="entry-title">CRBS</h1>
+      <h1 class="entry-title">MMS </h1>
       <p id="entry-subtitle" class="entry-sub">Walk the corridor and see what's free.</p>
       <button class="entry-btn" onclick="enterFloor()">
         <span>Step in</span>
@@ -57,26 +57,56 @@
   <!-- ===== Header ===== -->
   <header class="app-header">
     <div class="header-inner">
-      <div class="brand">
-        <img src="/static/images/logo.png" class="brand-logo brand-logo--full" alt="MS Education Academy">
+      <div class="header-left">
+        <button class="hamburger-btn" onclick="openSideDrawer()" aria-label="Open menu">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <span id="status-time" class="status-time"></span>
       </div>
 
-      <nav class="tab-nav" role="tablist">
-        <button id="tab-about" class="tab-btn" role="tab" aria-selected="false"
-          onclick="showTab('about')">About</button>
-        <button id="tab-corridor" class="tab-btn active" role="tab" aria-selected="true"
-          onclick="showTab('corridor')">Corridor</button>
-        <button id="tab-agenda" class="tab-btn" role="tab" aria-selected="false"
-          onclick="showTab('agenda')">Agenda</button>
-        <button id="tab-book" class="tab-btn" role="tab" aria-selected="false" onclick="showTab('book')">Book a
-          room</button>
-      </nav>
+      <div class="brand">
+        <img src="/static/images/logo.png" class="brand-logo" alt="MS Education Academy">
 
-      <div class="header-right">
-        <span id="status-time" class="status-time"></span>
+
       </div>
     </div>
   </header>
+
+  <!-- ===== Side Navigation Drawer ===== -->
+  <div id="side-nav-drawer" class="side-drawer hidden">
+    <div class="drawer-backdrop" onclick="closeSideDrawer()"></div>
+    <div class="drawer-sheet" role="dialog" aria-modal="true" aria-label="Navigation Menu">
+      <button class="drawer-close" onclick="closeSideDrawer()" aria-label="Close menu">✕</button>
+
+      <div class="drawer-brand">
+        <span class="drawer-portal-title">Meeting Management System </span>
+      </div>
+
+      <nav class="drawer-nav">
+        <button id="drawer-tab-about" class="drawer-nav-item" onclick="selectDrawerTab('about')">
+          <span class="nav-icon">ℹ️</span> About
+        </button>
+        <button id="drawer-tab-corridor" class="drawer-nav-item active" onclick="selectDrawerTab('corridor')">
+          <span class="nav-icon">🚪</span> Corridor
+        </button>
+        <button id="drawer-tab-agenda" class="drawer-nav-item" onclick="selectDrawerTab('agenda')">
+          <span class="nav-icon">📅</span> Upcoming Meetings
+        </button>
+        <button id="drawer-tab-book" class="drawer-nav-item" onclick="selectDrawerTab('book')">
+          <span class="nav-icon">✍️</span> Schedule a Meeting
+        </button>
+      </nav>
+
+      <div class="drawer-footer">
+        <span id="drawer-time" class="drawer-time"></span>
+      </div>
+    </div>
+  </div>
 
   <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
 

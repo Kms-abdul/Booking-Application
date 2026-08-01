@@ -62,22 +62,58 @@ function showTab(tab) {
     b.classList.remove('active');
     b.setAttribute('aria-selected', 'false');
   });
+  document.querySelectorAll('.drawer-nav-item').forEach(b => {
+    b.classList.remove('active');
+  });
 
-  document.getElementById(`view-${tab}`).classList.add('active');
+  const viewEl = document.getElementById(`view-${tab}`);
+  if (viewEl) viewEl.classList.add('active');
+
   const btn = document.getElementById(`tab-${tab}`);
-  btn.classList.add('active');
-  btn.setAttribute('aria-selected', 'true');
+  if (btn) {
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+  }
+
+  const drawerBtn = document.getElementById(`drawer-tab-${tab}`);
+  if (drawerBtn) {
+    drawerBtn.classList.add('active');
+  }
 
   if (tab === 'corridor') loadStatus();
   if (tab === 'agenda') loadAgenda();
+}
+
+function openSideDrawer() {
+  const drawer = document.getElementById('side-nav-drawer');
+  if (drawer) {
+    drawer.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeSideDrawer() {
+  const drawer = document.getElementById('side-nav-drawer');
+  if (drawer) {
+    drawer.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+}
+
+function selectDrawerTab(tab) {
+  showTab(tab);
+  closeSideDrawer();
 }
 
 // ── Clock ──────────────────────────────────────────────────────────────────
 
 function startClock() {
   const el = document.getElementById('status-time');
+  const drawerEl = document.getElementById('drawer-time');
   function tick() {
-    el.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (el) el.textContent = timeStr;
+    if (drawerEl) drawerEl.textContent = timeStr;
   }
   tick();
   setInterval(tick, 1000);
