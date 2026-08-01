@@ -2042,6 +2042,118 @@ body {
   box-shadow: 0 4px 12px rgba(201, 164, 104, 0.2);
 }
 
+/* ===================================================================
+   NOTIFICATION POPUP (SCHEDULE PAGE)
+   =================================================================== */
+.notification-popup {
+  position: fixed;
+  top: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #ffffff;
+  border-left: 5px solid var(--brass);
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  width: min(500px, 92vw);
+  transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.notification-popup.show {
+  top: 24px;
+}
+
+.notification-popup.blink-active {
+  animation: borderBlink 2.5s infinite ease-in-out;
+}
+
+.notification-popup-content {
+  flex: 1;
+  cursor: pointer;
+}
+
+.notification-popup-title {
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brass);
+  margin-bottom: 2px;
+}
+
+.notification-popup-text {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: black;
+  margin: 0;
+}
+
+.notification-popup-close {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.notification-popup-close:hover {
+  color: var(--busy);
+}
+
+.notification-icon {
+  font-size: 1.2rem;
+  animation: bellRing 1.5s infinite ease-in-out;
+  transform-origin: top center;
+}
+
+@keyframes borderBlink {
+
+  0%,
+  100% {
+    border-color: var(--brass);
+    box-shadow: 0 0 12px rgba(201, 164, 104, 0.3);
+  }
+
+  50% {
+    border-color: rgba(201, 164, 104, 0.3);
+    box-shadow: 0 0 4px rgba(201, 164, 104, 0.05);
+  }
+}
+
+@keyframes bellRing {
+
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+
+  20% {
+    transform: rotate(15deg);
+  }
+
+  40% {
+    transform: rotate(-15deg);
+  }
+
+  60% {
+    transform: rotate(10deg);
+  }
+
+  80% {
+    transform: rotate(-10deg);
+  }
+}
+
 .hidden {
   display: none !important;
 }

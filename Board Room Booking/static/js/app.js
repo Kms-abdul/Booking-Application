@@ -83,6 +83,29 @@ function showTab(tab) {
 
   if (tab === 'corridor') loadStatus();
   if (tab === 'agenda') loadAgenda();
+
+  if (tab === 'book') {
+    showBookNotification();
+  } else {
+    closeBookNotification();
+  }
+}
+
+function showBookNotification() {
+  const popup = document.getElementById('book-notification-popup');
+  if (popup) {
+    popup.classList.add('show');
+    popup.classList.add('blink-active');
+  }
+}
+
+function closeBookNotification(event) {
+  if (event) event.stopPropagation();
+  const popup = document.getElementById('book-notification-popup');
+  if (popup) {
+    popup.classList.remove('show');
+    popup.classList.remove('blink-active');
+  }
 }
 
 function openSideDrawer() {

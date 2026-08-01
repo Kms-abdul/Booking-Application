@@ -110,6 +110,17 @@
 
   <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
 
+  <!-- Notification Popup -->
+  <div id="book-notification-popup" class="notification-popup">
+    <span class="notification-icon">🔔</span>
+    <div class="notification-popup-content" onclick="selectDrawerTab('agenda')">
+      <div class="notification-popup-title">Notification</div>
+      <p class="notification-popup-text">Hi! Have you looked at the <b>Upcoming Meetings</b>?</p>
+    </div>
+    <button class="notification-popup-close" onclick="closeBookNotification(event)"
+      aria-label="Close notification">✕</button>
+  </div>
+
   <main class="main-content">
 
     <!-- ── ABOUT VIEW ── -->
@@ -218,6 +229,8 @@
         </div>
         <p class="view-note">An admin needs to sign off before a booking goes on the board.</p>
       </div>
+
+
 
 
 
