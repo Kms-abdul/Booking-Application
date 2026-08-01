@@ -205,14 +205,23 @@ def api_create_booking():
         return jsonify({"ok": False, "error": str(exc)}), 500
 
     if conflict:
-        return jsonify({
-            "ok":       False,
-            "error":    (
+        if conflict.get("conflict_type") == "attendee":
+            err_msg = (
+                f"Attendee '{conflict['conflict_email']}' is already in another meeting from "
+                f"{conflict['conflict_start']} to {conflict['conflict_end']} "
+                f"by {conflict['conflict_booked_by']} "
+                f"({conflict['conflict_title']})."
+            )
+        else:
+            err_msg = (
                 f"'{data['room']}' is already booked from "
                 f"{conflict['conflict_start']} to {conflict['conflict_end']} "
                 f"by {conflict['conflict_booked_by']} "
                 f"({conflict['conflict_title']})."
-            ),
+            )
+        return jsonify({
+            "ok":       False,
+            "error":    err_msg,
             "conflict": conflict,
         }), 409
 
@@ -268,14 +277,23 @@ def api_edit_booking(booking_id):
         return jsonify({"ok": False, "error": "Booking not found."}), 404
 
     if conflict:
-        room = updates.get("room", "")
-        return jsonify({
-            "ok": False,
-            "error": (
+        if conflict.get("conflict_type") == "attendee":
+            err_msg = (
+                f"Attendee '{conflict['conflict_email']}' is already in another meeting from "
+                f"{conflict['conflict_start']} to {conflict['conflict_end']} "
+                f"by {conflict['conflict_booked_by']} "
+                f"({conflict['conflict_title']})."
+            )
+        else:
+            room = conflict.get("conflict_room") or updates.get("room", "") or (booking.get("room") if booking else "")
+            err_msg = (
                 f"'{room}' is already booked from {conflict['conflict_start']} "
                 f"to {conflict['conflict_end']} by {conflict['conflict_booked_by']} "
                 f"({conflict['conflict_title']})."
-            ),
+            )
+        return jsonify({
+            "ok": False,
+            "error": err_msg,
             "conflict": conflict,
         }), 409
 

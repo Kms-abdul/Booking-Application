@@ -359,6 +359,19 @@ def _times_overlap(s1, e1, s2, e2):
     return s1 < e2 and e1 > s2
  
  
+def _parse_emails(emails_str):
+    if not emails_str:
+        return set()
+    emails = set()
+    for p in str(emails_str).replace(";", ",").split(","):
+        email_part = p.strip()
+        if "<" in email_part and ">" in email_part:
+            email_part = email_part.split("<")[-1].split(">")[0].strip()
+        if email_part and "@" in email_part:
+            emails.add(email_part.lower())
+    return emails
+
+
 def add_booking(room, booking_date, start_time_str, end_time_str,
                 title, booked_by, email="", attendees="", attendee_emails="",
                 meeting_mode="offline", meeting_link="", cc_emails=""):
@@ -399,15 +412,32 @@ def add_booking(room, booking_date, start_time_str, end_time_str,
         for r in rows:
             if r.get("status") != "active":
                 continue
-            if r.get("room") != room:
-                continue
             row_date = _str_to_date(r.get("date"))
             if row_date != b_date:
                 continue
             rs = _str_to_time(r.get("start_time"))
             re = _str_to_time(r.get("end_time"))
-            if rs and re and _times_overlap(b_start, b_end, rs, re):
+            if not (rs and re and _times_overlap(b_start, b_end, rs, re)):
+                continue
+
+            # Case A: Room overlap
+            if r.get("room") == room:
                 return None, {
+                    "conflict_type": "room",
+                    "conflict_title":      str(r.get("title", "")),
+                    "conflict_booked_by":  str(r.get("booked_by", "")),
+                    "conflict_start":      rs.strftime("%H:%M"),
+                    "conflict_end":        re.strftime("%H:%M"),
+                }
+
+            # Case B: Attendee overlap
+            existing_emails = _parse_emails(r.get("attendee_emails"))
+            new_emails = _parse_emails(attendee_emails)
+            common_emails = existing_emails.intersection(new_emails)
+            if common_emails:
+                return None, {
+                    "conflict_type": "attendee",
+                    "conflict_email": list(common_emails)[0],
                     "conflict_title":      str(r.get("title", "")),
                     "conflict_booked_by":  str(r.get("booked_by", "")),
                     "conflict_start":      rs.strftime("%H:%M"),
@@ -535,6 +565,7 @@ def update_booking(booking_id, updates):
         final_room  = new_room  or str(target_data.get('room',  '') or '')
         final_start = new_start or str(target_data.get('start_time', '') or '')
         final_end   = new_end   or str(target_data.get('end_time',   '') or '')
+        final_att_emails = new_att_emails if new_att_emails is not None else str(target_data.get('attendee_emails', '') or '')
  
         b_date  = _str_to_date(target_data.get('date'))
         b_start = _str_to_time(final_start)
@@ -552,14 +583,33 @@ def update_booking(booking_id, updates):
             rd = {h: row[col[h]].value for h in headers}
             if str(rd.get('status', '')) != 'active':
                 continue
-            if str(rd.get('room', '')) != final_room:
-                continue
-            if _str_to_date(rd.get('date')) != b_date:
+            row_date = _str_to_date(rd.get('date'))
+            if row_date != b_date:
                 continue
             rs = _str_to_time(rd.get('start_time'))
             re = _str_to_time(rd.get('end_time'))
-            if rs and re and _times_overlap(b_start, b_end, rs, re):
+            if not (rs and re and _times_overlap(b_start, b_end, rs, re)):
+                continue
+ 
+            # Case A: Room overlap
+            if str(rd.get('room', '')) == final_room:
                 return None, {
+                    "conflict_type": "room",
+                    "conflict_room": final_room,
+                    'conflict_title':     str(rd.get('title', '')),
+                    'conflict_booked_by': str(rd.get('booked_by', '')),
+                    'conflict_start':     rs.strftime('%H:%M'),
+                    'conflict_end':       re.strftime('%H:%M'),
+                }
+ 
+            # Case B: Attendee overlap
+            existing_emails = _parse_emails(rd.get('attendee_emails'))
+            new_emails = _parse_emails(final_att_emails)
+            common_emails = existing_emails.intersection(new_emails)
+            if common_emails:
+                return None, {
+                    "conflict_type": "attendee",
+                    "conflict_email": list(common_emails)[0],
                     'conflict_title':     str(rd.get('title', '')),
                     'conflict_booked_by': str(rd.get('booked_by', '')),
                     'conflict_start':     rs.strftime('%H:%M'),

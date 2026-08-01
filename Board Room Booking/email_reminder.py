@@ -21,30 +21,29 @@ logger = logging.getLogger(__name__)
 
 def _get_recipients(booking: dict) -> list[str]:
     """
-    Get recipient email list.
-    Includes the organiser's email and any attendee emails parsed from the booking.
-    Falls back to config.REMINDER_TO if no emails are found.
+    Get recipient email list (TO field).
+    Includes all attendee emails parsed from the booking.
+    Falls back to the organiser's email (or config.REMINDER_TO) if no attendee emails are found.
     """
     recipients = []
     
-    # 1. Organiser email
-    user_email = (booking.get("email") or "").strip()
-    if user_email and "@" in user_email:
-        recipients.append(user_email)
-        
-    # 2. Attendee emails
+    # Attendee emails
     att_emails_str = (booking.get("attendee_emails") or "").strip()
     if att_emails_str:
-        # Split by comma or semicolon
         for p in att_emails_str.replace(";", ",").split(","):
             email_part = p.strip()
-            # extract email if in form "Name <email@domain>"
             if "<" in email_part and ">" in email_part:
                 email_part = email_part.split("<")[-1].split(">")[0].strip()
             if email_part and "@" in email_part and email_part not in recipients:
                 recipients.append(email_part)
                 
-    # Fallback if empty
+    # Fallback to organiser email if no attendees
+    if not recipients:
+        user_email = (booking.get("email") or "").strip()
+        if user_email and "@" in user_email:
+            recipients.append(user_email)
+            
+    # Ultimate fallback
     if not recipients:
         recipients = [r for r in config.REMINDER_TO if r and r != "team@example.com"]
         
@@ -54,10 +53,20 @@ def _get_recipients(booking: dict) -> list[str]:
 def _get_cc_recipients(booking: dict) -> list[str]:
     """
     Get CC email list.
-    Includes the default CC "kareemulla@mseducation.academy"
-    along with any custom CC emails parsed from booking.
+    Includes the default CC "kareemulla@mseducation.academy",
+    the organiser's email (if attendee emails exist),
+    and any custom CC emails parsed from booking.
     """
     cc_list = ["kareemulla@mseducation.academy"]
+    
+    # Add organiser's email to CC if attendee emails exist (so organiser is CC'd on their own meeting sent to attendees)
+    att_emails_str = (booking.get("attendee_emails") or "").strip()
+    user_email = (booking.get("email") or "").strip()
+    if att_emails_str and user_email and "@" in user_email:
+        if user_email not in cc_list:
+            cc_list.append(user_email)
+            
+    # Custom CC emails entered by user
     custom_cc = (booking.get("cc_emails") or "").strip()
     if custom_cc:
         for p in custom_cc.replace(";", ",").split(","):
@@ -66,6 +75,7 @@ def _get_cc_recipients(booking: dict) -> list[str]:
                 email_part = email_part.split("<")[-1].split(">")[0].strip()
             if email_part and "@" in email_part and email_part not in cc_list:
                 cc_list.append(email_part)
+                
     return cc_list
 
 
@@ -306,7 +316,15 @@ def send_confirmation(booking: dict) -> bool:
         f"✅ Confirmed: {booking['title']} — {booking['room']} "
         f"on {booking['date']} at {booking['start_time']}"
     )
-    msg["From"] = config.SMTP_FROM
+    organiser_name = booking.get("booked_by", "").strip()
+    organiser_email = (booking.get("email") or "").strip()
+    if organiser_name and organiser_email:
+        msg["From"] = f'"{organiser_name}" <{organiser_email}>'
+    elif organiser_email:
+        msg["From"] = organiser_email
+    else:
+        msg["From"] = config.SMTP_FROM
+
     msg["To"]   = ", ".join(recipients)
     msg["Cc"]   = ", ".join(cc_list)
     msg.attach(MIMEText(plain, "plain"))
@@ -408,7 +426,15 @@ def send_reminder(booking: dict) -> bool:
         f"⏰ Reminder ({mins} min): {booking['title']} — "
         f"{booking['room']} at {booking['start_time']}"
     )
-    msg["From"] = config.SMTP_FROM
+    organiser_name = booking.get("booked_by", "").strip()
+    organiser_email = (booking.get("email") or "").strip()
+    if organiser_name and organiser_email:
+        msg["From"] = f'"{organiser_name}" <{organiser_email}>'
+    elif organiser_email:
+        msg["From"] = organiser_email
+    else:
+        msg["From"] = config.SMTP_FROM
+
     msg["To"]   = ", ".join(recipients)
     msg["Cc"]   = ", ".join(cc_list)
     msg.attach(MIMEText(plain, "plain"))
