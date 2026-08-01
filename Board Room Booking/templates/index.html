@@ -174,8 +174,18 @@
       <div class="view-header">
         <div>
           <p class="view-eyebrow">Reception signage</p>
-          <h1 class="view-title">Day agenda</h1>
+          <h1 class="view-title">Upcoming Meetings</h1>
         </div>
+      </div>
+
+      <!-- Category Filter Tabs -->
+      <div class="category-tabs" role="tablist" aria-label="Filter by meeting type">
+        <button id="category-tab-online" class="category-tab active" onclick="setAgendaCategory('online')">
+          Online Meetings
+        </button>
+        <button id="category-tab-offline" class="category-tab" onclick="setAgendaCategory('offline')">
+          Offline Meetings
+        </button>
       </div>
 
       <div class="agenda-controls">

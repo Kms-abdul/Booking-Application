@@ -2002,6 +2002,46 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* ===================================================================
+   CATEGORY FILTER TABS (ONLINE/OFFLINE)
+   =================================================================== */
+.category-tabs {
+  display: flex;
+  background: rgba(15, 23, 42, 0.04);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin: 0 auto 20px;
+  max-width: 500px;
+  width: calc(100% - 44px);
+}
+
+.category-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-align: center;
+  transition: all .25s var(--ease);
+  white-space: nowrap;
+}
+
+.category-tab:hover {
+  color: var(--text);
+}
+
+.category-tab.active {
+  background: var(--brass);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(201, 164, 104, 0.2);
+}
+
 .hidden {
   display: none !important;
 }

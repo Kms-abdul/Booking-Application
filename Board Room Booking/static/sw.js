@@ -9,8 +9,8 @@
 // Bump CACHE_VERSION whenever you deploy changes so PWA users get the update.
 // =============================================================================
 
-const CACHE_VERSION = 'v11';
-const CACHE_NAME    = `room-booking-${CACHE_VERSION}`;
+const CACHE_VERSION = 'v12';
+const CACHE_NAME = `room-booking-${CACHE_VERSION}`;
 
 const SHELL_URLS = [
   '/',

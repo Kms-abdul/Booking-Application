@@ -13,6 +13,7 @@ let _cancelId = null;
 let _activeRoomPanel = null;
 let _activeCorridorFloor = 'all';   // 'all' | '3' | '4' | '5'
 let _activeAgendaFloor = 'all';   // 'all' | '3' | '4' | '5'
+let _activeAgendaCategory = 'online'; // 'online' | 'offline'
 let _lastStatusList = [];           // full unfiltered status list
 
 const STATUS_COLOR = {
@@ -530,10 +531,21 @@ async function loadAgenda() {
       bookings = bookings.filter(b => floorRooms.has(b.room));
     }
 
+    // Filter by online/offline category client-side
+    bookings = bookings.filter(b => b.meeting_mode === _activeAgendaCategory);
+
     renderAgenda(bookings, date);
   } catch (err) {
     list.innerHTML = `<p class="empty-state">⚠️ ${esc(err.message)}</p>`;
   }
+}
+
+function setAgendaCategory(category) {
+  _activeAgendaCategory = category;
+  document.querySelectorAll('.category-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.id === `category-tab-${category}`);
+  });
+  loadAgenda();
 }
 
 function renderAgenda(bookings, date) {
@@ -543,7 +555,8 @@ function renderAgenda(bookings, date) {
 
   if (!bookings.length) {
     const label = isToday ? 'today' : `on ${formatDateDisplay(date)}`;
-    list.innerHTML = `<div class="empty-state"><span class="empty-state-icon">📅</span>No bookings ${label}.</div>`;
+    const catLabel = _activeAgendaCategory === 'online' ? 'online' : 'offline';
+    list.innerHTML = `<div class="empty-state"><span class="empty-state-icon">📅</span>No ${catLabel} meetings ${label}.</div>`;
     return;
   }
 
