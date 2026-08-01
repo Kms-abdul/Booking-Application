@@ -1,0 +1,123 @@
+# 📘 Codebase Architecture & Technical Walkthrough
+
+Here is a comprehensive breakdown of how each component and file in the **Meeting Management System App** works.
+
+---
+
+## 1. Overall System Architecture
+
+```
+[ User Browser / Mobile Device ]
+       │
+       │ HTTP / REST API Calls
+       ▼
+┌─────────────────────────────────────────────────────────┐
+│                      app.py                             │
+│  (Flask Web Server + APScheduler Background Worker)    │
+└──────────────┬────────────────────────────┬─────────────┘
+               │                            │
+               ▼                            ▼
+┌────────────────────────────┐  ┌─────────────────────────┐
+│        excel_db.py         │  │    email_reminder.py    │
+│  (Thread-Safe Excel I/O)   │  │ (SMTP Email Generator)  │
+└──────────────┬─────────────┘  └───────────┬─────────────┘
+               │                            │
+               ▼                            ▼
+┌────────────────────────────┐  ┌─────────────────────────┐
+│    data/bookings.xlsx      │  │ Gmail / Outlook SMTP    │
+│    (Excel "Database")      │  │     (Outgoing Mail)     │
+└────────────────────────────┘  └─────────────────────────┘
+```
+
+---
+
+## 2. Deep-Dive File Breakdown
+
+### `config.py` — Central Settings & Configuration
+* **Purpose**: Serves as a single place for non-developers to configure app settings without modifying logic.
+* **Key Components**:
+  * `ROOMS`: Array of room dictionaries defining names (`MYJo`, `GRK`, `Ahad`, `Audit`,`Zain`) and visual hex colors.
+  * `EXCEL_PATH` & `LOCK_PATH`: File paths for the database and filelock safety mechanism.
+  * `REMINDER_MINUTES_BEFORE`: Set to `30` (triggers reminders 30 minutes before meeting start).
+  * `EMAIL_ENABLED` & `SMTP_*`: Credentials for Gmail / Outlook integration.
+  * `REMINDER_TO`: Recipient email list for booking notifications and reminders.
+
+---
+
+### `excel_db.py` — Excel "Database" Layer (Concurrency-Safe)
+* **Purpose**: Manages all reads and writes to `bookings.xlsx` using `openpyxl`.
+* **Key Mechanisms**:
+  * **File Lock (`FileLock`)**: Every function wraps its operations inside `with _lock():`. This ensures that even if multiple HTTP requests or scheduler jobs run simultaneously, only one process reads/writes to the Excel file at a time, preventing corruption.
+  * **Daily Backups (`_maybe_backup`)**: Automatically creates a daily snapshot in `data/backups/bookings_YYYY-MM-DD.xlsx` on the first write of each day.
+  * **Atomic Overlap Check (`add_booking`)**:
+    * Reads active bookings for the specified room and date.
+    * Checks time overlap: `(new_start < existing_end) and (new_end > existing_start)`.
+    * If overlap exists, immediately returns a conflict dictionary without writing.
+    * If clear, appends the new row and saves the workbook atomically under the lock.
+  * **Cancellation (`cancel_booking`)**: Updates the `status` column from `active` to `cancelled`.
+  * **Live Status (`get_today_status`)**: Evaluates the server's current time against today's bookings to categorize each room as `engaged` or `vacant`.
+
+---
+
+### `email_reminder.py` — Mail Dispatcher
+* **Purpose**: Composes and dispatches responsive HTML & plain-text emails via SMTP.
+* **Key Functions**:
+  * `_send_via_smtp(msg)`: Connects using `smtplib`. Supports TLS (port 587 for Gmail/Outlook) or SSL (port 465).
+  * `send_confirmation(booking)`: Triggered immediately when a booking is created.
+  * `send_reminder(booking)`: Triggered by the scheduler 30 minutes before a meeting starts. Includes a callout for attendees to move to the room.
+
+---
+
+### `app.py` — Flask API & Background Scheduler
+* **Purpose**: Serves the frontend, exposes REST endpoints, and manages the background reminder job.
+* **Endpoints**:
+  * `GET /`: Serves `templates/index.html`.
+  * `GET /api/rooms`: Returns the room list.
+  * `GET /api/status`: Returns live status for all rooms right now.
+  * `GET /api/bookings?date=YYYY-MM-DD`: Returns active bookings for a date.
+  * `POST /api/bookings`: Creates a booking. Calls `email_reminder.send_confirmation()` upon success. Returns `409 Conflict` if double-booked.
+  * `DELETE /api/bookings/<id>`: Cancels a booking after verifying that the canceller's name matches `booked_by`.
+* **Background Scheduler (`_reminder_job`)**:
+  * Powered by `APScheduler`. Runs every 60 seconds.
+  * Finds today's active bookings starting within the next `REMINDER_MINUTES_BEFORE` (30 mins).
+  * Checks against `ReminderLog` in Excel to guarantee no duplicate emails are sent.
+  * **Werkzeug Reload Guard**: Ensures the scheduler only initializes once, even if running in Flask debug mode.
+
+---
+
+### Frontend Files (`templates/index.html`, `static/js/app.js`, `static/css/style.css`)
+* **`templates/index.html`**: A single-page architecture with tab views (`Today`, `Agenda`, `+ Book`) and a cancellation modal.
+* **`static/css/style.css`**: Dark glassmorphism theme with custom color tokens for each room, responsive CSS grid, skeleton loaders, and pulse animations for engaged rooms.
+* **`static/js/app.js`**:
+  * `loadStatus()`: Renders live room cards with status badges and countdown timers ("Free in X min").
+  * `loadAgenda()`: Renders chronological booking cards with date shift controls (`‹` and `›`).
+  * `submitBooking()`: Performs client-side validation before sending JSON to `/api/bookings`. Handles 409 conflict responses gracefully.
+  * `openCancel()` / `confirmCancel()`: Prompt for the booker's name to authorize cancellation.
+
+---
+
+### PWA Engine (`static/manifest.json` & `static/sw.js`)
+* **`manifest.json`**: Provides mobile metadata (app title, dark theme color `#0f0f1a`, standalone window mode, and 192x192 / 512x512 PNG icons) for "Add to Home Screen".
+* **`sw.js` (Service Worker)**:
+  * Caches static app shell assets (HTML, CSS, JS, Fonts).
+  * Bypasses cache for all `/api/*` requests to ensure booking data is always fetched live.
+  * Configured without force-reload hooks to eliminate page flickering loops.
+
+---
+
+## 3. Data Flow Summary
+
+### Creating a Booking
+1. User submits form in `app.js`.
+2. `app.py` receives `POST /api/bookings`.
+3. `excel_db.py` acquires `bookings.lock`, checks for overlapping times in `data/bookings.xlsx`.
+4. If valid, writes row, releases lock, and returns `201 Created`.
+5. `app.py` triggers `email_reminder.send_confirmation()` in the background.
+6. `app.js` displays a success toast and switches to the live status view.
+
+### 30-Minute Email Reminder
+1. `APScheduler` runs `_reminder_job()` every 60 seconds.
+2. Reads `bookings.xlsx` and `ReminderLog`.
+3. If a meeting starts within 30 minutes and its `booking_id` is not in `ReminderLog`:
+   * Calls `email_reminder.send_reminder()`.
+   * On success, appends `booking_id` to `ReminderLog` sheet in Excel.

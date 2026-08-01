@@ -1,0 +1,788 @@
+import React, { useState, useEffect, useMemo } from "react";
+
+const ROOMS = [
+  { id: "myjo", name: "MYJo", accent: "#6B7FD7" },
+  { id: "grk", name: "GRK", accent: "#C98A3E" },
+  { id: "ahad", name: "Ahad", accent: "#4C8577" },
+  { id: "audit", name: "Audit", accent: "#A85C7C" },
+  { id: "zain", name: "Zain", accent: "#045546"},
+];
+
+const OPEN_HOUR = 8; // 8:00
+const CLOSE_HOUR = 20; // 20:00
+
+function pad(n) {
+  return n.toString().padStart(2, "0");
+}
+
+function toYMD(d) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function timeOptions() {
+  const opts = [];
+  for (let h = OPEN_HOUR; h <= CLOSE_HOUR; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      if (h === CLOSE_HOUR && m > 0) continue;
+      const value = `${pad(h)}:${pad(m)}`;
+      opts.push(value);
+    }
+  }
+  return opts;
+}
+
+function formatTime(hhmm) {
+  const [h, m] = hhmm.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${pad(m)} ${period}`;
+}
+
+function formatDateLabel(ymd) {
+  const d = new Date(ymd + "T00:00:00");
+  return d.toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function addDays(ymd, delta) {
+  const d = new Date(ymd + "T00:00:00");
+  d.setDate(d.getDate() + delta);
+  return toYMD(d);
+}
+
+function overlaps(aStart, aEnd, bStart, bEnd) {
+  return aStart < bEnd && bStart < aEnd;
+}
+
+export default function RoomBooking() {
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [now, setNow] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(toYMD(new Date()));
+  const [filterRoom, setFilterRoom] = useState("all");
+  const [showForm, setShowForm] = useState(false);
+  const [formRoom, setFormRoom] = useState(ROOMS[0].id);
+  const [formTitle, setFormTitle] = useState("");
+  const [formBy, setFormBy] = useState("");
+  const [formStart, setFormStart] = useState("09:00");
+  const [formEnd, setFormEnd] = useState("09:30");
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState("");
+
+  const TIMES = useMemo(() => timeOptions(), []);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const res = await window.storage.get("bookings", true);
+        if (mounted) {
+          setBookings(res && res.value ? JSON.parse(res.value) : []);
+        }
+      } catch (e) {
+        if (mounted) setBookings([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    load();
+    const poll = setInterval(load, 14000);
+    const clock = setInterval(() => setNow(new Date()), 30000);
+    return () => {
+      mounted = false;
+      clearInterval(poll);
+      clearInterval(clock);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(""), 2600);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  async function persist(next) {
+    setBookings(next);
+    try {
+      const result = await window.storage.set("bookings", JSON.stringify(next), true);
+      if (!result) setLoadError(true);
+    } catch (e) {
+      setLoadError(true);
+    }
+  }
+
+  function openForm(roomId) {
+    setFormRoom(roomId || ROOMS[0].id);
+    setFormTitle("");
+    setFormBy("");
+    setFormStart("09:00");
+    setFormEnd("09:30");
+    setFormError("");
+    setShowForm(true);
+  }
+
+  async function submitBooking(e) {
+    e.preventDefault();
+    setFormError("");
+    if (!formTitle.trim()) return setFormError("Give the meeting a name.");
+    if (!formBy.trim()) return setFormError("Add your name so people know who booked it.");
+    if (formStart >= formEnd) return setFormError("End time must be after start time.");
+
+    const conflict = bookings.find(
+      (b) =>
+        b.room === formRoom &&
+        b.date === selectedDate &&
+        overlaps(formStart, formEnd, b.start, b.end)
+    );
+    if (conflict) {
+      return setFormError(
+        `${ROOMS.find((r) => r.id === formRoom).name} is already booked ${formatTime(
+          conflict.start
+        )}–${formatTime(conflict.end)} for "${conflict.title}".`
+      );
+    }
+
+    setSaving(true);
+    const entry = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      room: formRoom,
+      date: selectedDate,
+      start: formStart,
+      end: formEnd,
+      title: formTitle.trim(),
+      by: formBy.trim(),
+    };
+    const next = [...bookings, entry].sort((a, b) => a.start.localeCompare(b.start));
+    await persist(next);
+    setSaving(false);
+    setShowForm(false);
+    setToast(`Booked ${ROOMS.find((r) => r.id === formRoom).name} for ${formatTime(formStart)}`);
+  }
+
+  async function cancelBooking(id) {
+    const next = bookings.filter((b) => b.id !== id);
+    await persist(next);
+    setToast("Booking cancelled");
+  }
+
+  const nowYMD = toYMD(now);
+  const nowHHMM = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+  function statusFor(roomId) {
+    const todays = bookings
+      .filter((b) => b.room === roomId && b.date === nowYMD)
+      .sort((a, b) => a.start.localeCompare(b.start));
+    const current = todays.find((b) => b.start <= nowHHMM && nowHHMM < b.end);
+    if (current) return { busy: true, text: `Engaged until ${formatTime(current.end)}`, title: current.title };
+    const next = todays.find((b) => b.start > nowHHMM);
+    if (next) return { busy: false, text: `Vacant · next booking ${formatTime(next.start)}` };
+    return { busy: false, text: "Vacant all day" };
+  }
+
+  const dayBookings = bookings
+    .filter((b) => b.date === selectedDate && (filterRoom === "all" || b.room === filterRoom))
+    .sort((a, b) => a.start.localeCompare(b.start) || a.room.localeCompare(b.room));
+
+  return (
+    <div style={styles.page}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+        * { box-sizing: border-box; }
+        .rb-scope button { font-family: inherit; cursor: pointer; }
+        .rb-scope input, .rb-scope select { font-family: 'IBM Plex Mono', monospace; }
+        .rb-scope ::placeholder { color: #9a9284; }
+        .rb-room-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .rb-room-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(33,38,31,0.10); }
+        .rb-btn:hover { filter: brightness(1.05); }
+        .rb-chip { transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+        .rb-cancel:hover { background: #B24C3A; color: #fff; }
+        @media (max-width: 640px) {
+          .rb-rooms-grid { grid-template-columns: 1fr 1fr !important; }
+          .rb-form-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+      <div className="rb-scope" style={styles.scope}>
+        <header style={styles.header}>
+          <div>
+            <div style={styles.eyebrow}>Meeting Management System</div>
+            <h1 style={styles.h1}>Room Schedule</h1>
+          </div>
+          <div style={styles.clock}>
+            {now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+          </div>
+        </header>
+
+        {loadError && (
+          <div style={styles.warnBanner}>
+            Changes aren't syncing right now — try again in a moment.
+          </div>
+        )}
+
+        <section
+          className="rb-rooms-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: 12,
+            marginBottom: 28,
+          }}
+        >
+          {ROOMS.map((room) => {
+            const s = loading ? { busy: false, text: "Loading…" } : statusFor(room.id);
+            return (
+              <div
+                key={room.id}
+                className="rb-room-card"
+                style={{
+                  ...styles.roomCard,
+                  borderTop: `4px solid ${room.accent}`,
+                }}
+              >
+                <div style={styles.roomName}>{room.name}</div>
+                <div
+                  style={{
+                    ...styles.statusTab,
+                    background: s.busy ? "#B24C3A" : "#3F7859",
+                  }}
+                >
+                  {s.busy ? "Engaged" : "Vacant"}
+                </div>
+                <div style={styles.roomStatusText}>{s.text}</div>
+                <button
+                  className="rb-btn"
+                  onClick={() => openForm(room.id)}
+                  style={{ ...styles.smallBookBtn, borderColor: room.accent, color: room.accent }}
+                >
+                  + Book
+                </button>
+              </div>
+            );
+          })}
+        </section>
+
+        <section style={styles.agendaHeader}>
+          <div style={styles.dateNav}>
+            <button className="rb-btn" style={styles.navBtn} onClick={() => setSelectedDate((d) => addDays(d, -1))}>
+              ‹
+            </button>
+            <div style={styles.dateLabel}>
+              {formatDateLabel(selectedDate)}
+              {selectedDate === nowYMD && <span style={styles.todayPill}>Today</span>}
+            </div>
+            <button className="rb-btn" style={styles.navBtn} onClick={() => setSelectedDate((d) => addDays(d, 1))}>
+              ›
+            </button>
+          </div>
+          <button className="rb-btn" style={styles.primaryBtn} onClick={() => openForm(filterRoom !== "all" ? filterRoom : ROOMS[0].id)}>
+            + New booking
+          </button>
+        </section>
+
+        <div style={styles.chipRow}>
+          <button
+            className="rb-chip"
+            onClick={() => setFilterRoom("all")}
+            style={{
+              ...styles.chip,
+              background: filterRoom === "all" ? "#21261F" : "transparent",
+              color: filterRoom === "all" ? "#F5F2EC" : "#21261F",
+              borderColor: "#21261F",
+            }}
+          >
+            All rooms
+          </button>
+          {ROOMS.map((r) => (
+            <button
+              key={r.id}
+              className="rb-chip"
+              onClick={() => setFilterRoom(r.id)}
+              style={{
+                ...styles.chip,
+                background: filterRoom === r.id ? r.accent : "transparent",
+                color: filterRoom === r.id ? "#fff" : r.accent,
+                borderColor: r.accent,
+              }}
+            >
+              {r.name}
+            </button>
+          ))}
+        </div>
+
+        <section style={styles.agenda}>
+          {loading ? (
+            <div style={styles.emptyState}>Loading schedule…</div>
+          ) : dayBookings.length === 0 ? (
+            <div style={styles.emptyState}>
+              Nothing on the board for this day.
+              <div style={{ marginTop: 6, fontSize: 13, color: "#8a8378" }}>
+                Pick a room above and add the first booking.
+              </div>
+            </div>
+          ) : (
+            dayBookings.map((b) => {
+              const room = ROOMS.find((r) => r.id === b.room);
+              return (
+                <div key={b.id} style={styles.agendaRow}>
+                  <div style={styles.agendaTime}>
+                    {formatTime(b.start)}
+                    <div style={styles.agendaTimeEnd}>{formatTime(b.end)}</div>
+                  </div>
+                  <div style={{ ...styles.agendaBar, background: room.accent }} />
+                  <div style={styles.agendaBody}>
+                    <div style={styles.agendaTitleRow}>
+                      <span style={styles.agendaTitle}>{b.title}</span>
+                      <span style={{ ...styles.roomBadge, color: room.accent, borderColor: room.accent }}>
+                        {room.name}
+                      </span>
+                    </div>
+                    <div style={styles.agendaBy}>Booked by {b.by}</div>
+                  </div>
+                  <button className="rb-btn rb-cancel" style={styles.cancelBtn} onClick={() => cancelBooking(b.id)}>
+                    Cancel
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </section>
+      </div>
+
+      {showForm && (
+        <div style={styles.overlay} onClick={() => setShowForm(false)}>
+          <form
+            className="rb-scope"
+            style={styles.modal}
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={submitBooking}
+          >
+            <div style={styles.modalHeader}>
+              <div style={styles.modalTitle}>New booking</div>
+              <button
+                type="button"
+                className="rb-btn"
+                style={styles.closeBtn}
+                onClick={() => setShowForm(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <label style={styles.label}>Room</label>
+            <div style={styles.roomPickRow}>
+              {ROOMS.map((r) => (
+                <button
+                  type="button"
+                  key={r.id}
+                  onClick={() => setFormRoom(r.id)}
+                  style={{
+                    ...styles.roomPick,
+                    background: formRoom === r.id ? r.accent : "transparent",
+                    color: formRoom === r.id ? "#fff" : r.accent,
+                    borderColor: r.accent,
+                  }}
+                >
+                  {r.name}
+                </button>
+              ))}
+            </div>
+
+            <label style={styles.label}>Meeting name</label>
+            <input
+              style={styles.input}
+              value={formTitle}
+              onChange={(e) => setFormTitle(e.target.value)}
+              placeholder="e.g. Budget review"
+              maxLength={80}
+            />
+
+            <label style={styles.label}>Your name</label>
+            <input
+              style={styles.input}
+              value={formBy}
+              onChange={(e) => setFormBy(e.target.value)}
+              placeholder="e.g. Priya"
+              maxLength={40}
+            />
+
+            <label style={styles.label}>Date</label>
+            <input
+              type="date"
+              style={styles.input}
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+            />
+
+            <div className="rb-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <label style={styles.label}>Start</label>
+                <select style={styles.input} value={formStart} onChange={(e) => setFormStart(e.target.value)}>
+                  {TIMES.map((t) => (
+                    <option key={t} value={t}>
+                      {formatTime(t)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={styles.label}>End</label>
+                <select style={styles.input} value={formEnd} onChange={(e) => setFormEnd(e.target.value)}>
+                  {TIMES.map((t) => (
+                    <option key={t} value={t}>
+                      {formatTime(t)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {formError && <div style={styles.formError}>{formError}</div>}
+
+            <button type="submit" className="rb-btn" style={styles.submitBtn} disabled={saving}>
+              {saving ? "Booking…" : "Confirm booking"}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {toast && <div style={styles.toast}>{toast}</div>}
+    </div>
+  );
+}
+
+const styles = {
+  page: {
+    minHeight: "100%",
+    background: "#F5F2EC",
+    fontFamily: "'Inter', sans-serif",
+    color: "#21261F",
+    padding: "0 0 40px",
+  },
+  scope: {
+    maxWidth: 880,
+    margin: "0 auto",
+    padding: "28px 20px 0",
+  },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    marginBottom: 26,
+  },
+  eyebrow: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11,
+    letterSpacing: "0.14em",
+    textTransform: "uppercase",
+    color: "#8a8378",
+    marginBottom: 4,
+  },
+  h1: {
+    fontFamily: "'Fraunces', serif",
+    fontWeight: 600,
+    fontSize: 30,
+    margin: 0,
+    letterSpacing: "-0.01em",
+  },
+  clock: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 20,
+    color: "#5B6259",
+  },
+  warnBanner: {
+    background: "#F6E4DE",
+    color: "#8a3a29",
+    padding: "10px 14px",
+    borderRadius: 8,
+    fontSize: 13,
+    marginBottom: 18,
+  },
+  roomCard: {
+    background: "#FFFFFF",
+    borderRadius: 10,
+    padding: "16px 14px",
+    boxShadow: "0 1px 3px rgba(33,38,31,0.08)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  roomName: {
+    fontFamily: "'Fraunces', serif",
+    fontWeight: 600,
+    fontSize: 18,
+  },
+  statusTab: {
+    alignSelf: "flex-start",
+    color: "#fff",
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    padding: "3px 8px",
+    borderRadius: 4,
+  },
+  roomStatusText: {
+    fontSize: 12.5,
+    color: "#5B6259",
+    lineHeight: 1.4,
+    minHeight: 32,
+  },
+  smallBookBtn: {
+    marginTop: "auto",
+    background: "transparent",
+    border: "1.5px solid",
+    borderRadius: 6,
+    padding: "6px 0",
+    fontSize: 12.5,
+    fontWeight: 600,
+    fontFamily: "'Inter', sans-serif",
+  },
+  agendaHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  dateNav: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  },
+  navBtn: {
+    background: "#fff",
+    border: "1px solid #E1DCD1",
+    borderRadius: 6,
+    width: 30,
+    height: 30,
+    fontSize: 16,
+    color: "#21261F",
+    lineHeight: 1,
+  },
+  dateLabel: {
+    fontFamily: "'Fraunces', serif",
+    fontWeight: 600,
+    fontSize: 17,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+  todayPill: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 10,
+    background: "#3F7859",
+    color: "#fff",
+    padding: "2px 7px",
+    borderRadius: 20,
+    letterSpacing: "0.04em",
+  },
+  primaryBtn: {
+    background: "#21261F",
+    color: "#F5F2EC",
+    border: "none",
+    borderRadius: 7,
+    padding: "9px 16px",
+    fontSize: 13.5,
+    fontWeight: 600,
+    fontFamily: "'Inter', sans-serif",
+  },
+  chipRow: {
+    display: "flex",
+    gap: 8,
+    flexWrap: "wrap",
+    marginBottom: 18,
+  },
+  chip: {
+    border: "1.5px solid",
+    borderRadius: 20,
+    padding: "5px 13px",
+    fontSize: 12.5,
+    fontWeight: 600,
+    fontFamily: "'Inter', sans-serif",
+  },
+  agenda: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  emptyState: {
+    background: "#FFFFFF",
+    border: "1px dashed #E1DCD1",
+    borderRadius: 10,
+    padding: "30px 20px",
+    textAlign: "center",
+    color: "#5B6259",
+    fontSize: 14.5,
+  },
+  agendaRow: {
+    background: "#FFFFFF",
+    borderRadius: 10,
+    padding: "12px 14px",
+    display: "flex",
+    alignItems: "stretch",
+    gap: 12,
+    boxShadow: "0 1px 3px rgba(33,38,31,0.06)",
+  },
+  agendaTime: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 13,
+    fontWeight: 600,
+    width: 68,
+    flexShrink: 0,
+    color: "#21261F",
+  },
+  agendaTimeEnd: {
+    fontSize: 12,
+    fontWeight: 400,
+    color: "#8a8378",
+    marginTop: 2,
+  },
+  agendaBar: {
+    width: 4,
+    borderRadius: 2,
+    flexShrink: 0,
+  },
+  agendaBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  agendaTitleRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  agendaTitle: {
+    fontWeight: 600,
+    fontSize: 14.5,
+  },
+  roomBadge: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 10.5,
+    border: "1px solid",
+    borderRadius: 4,
+    padding: "1px 6px",
+    letterSpacing: "0.03em",
+  },
+  agendaBy: {
+    fontSize: 12.5,
+    color: "#8a8378",
+    marginTop: 2,
+  },
+  cancelBtn: {
+    alignSelf: "center",
+    background: "transparent",
+    border: "1px solid #E1DCD1",
+    color: "#8a8378",
+    borderRadius: 6,
+    fontSize: 12,
+    padding: "6px 10px",
+    fontFamily: "'Inter', sans-serif",
+    flexShrink: 0,
+  },
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(33,38,31,0.45)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    zIndex: 50,
+  },
+  modal: {
+    background: "#FBF9F5",
+    borderRadius: 14,
+    padding: 22,
+    width: "100%",
+    maxWidth: 420,
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+    maxHeight: "90vh",
+    overflowY: "auto",
+  },
+  modalHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  modalTitle: {
+    fontFamily: "'Fraunces', serif",
+    fontWeight: 600,
+    fontSize: 20,
+  },
+  closeBtn: {
+    background: "transparent",
+    border: "none",
+    fontSize: 16,
+    color: "#8a8378",
+  },
+  label: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "#8a8378",
+    marginTop: 4,
+  },
+  input: {
+    border: "1px solid #E1DCD1",
+    borderRadius: 7,
+    padding: "9px 10px",
+    fontSize: 14,
+    background: "#fff",
+    color: "#21261F",
+    width: "100%",
+  },
+  roomPickRow: {
+    display: "flex",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  roomPick: {
+    border: "1.5px solid",
+    borderRadius: 7,
+    padding: "6px 12px",
+    fontSize: 13,
+    fontWeight: 600,
+    fontFamily: "'Inter', sans-serif",
+  },
+  formError: {
+    background: "#F6E4DE",
+    color: "#8a3a29",
+    fontSize: 12.5,
+    padding: "8px 10px",
+    borderRadius: 7,
+  },
+  submitBtn: {
+    marginTop: 8,
+    background: "#21261F",
+    color: "#F5F2EC",
+    border: "none",
+    borderRadius: 8,
+    padding: "11px 0",
+    fontSize: 14.5,
+    fontWeight: 600,
+    fontFamily: "'Inter', sans-serif",
+  },
+  toast: {
+    position: "fixed",
+    bottom: 20,
+    left: "50%",
+    transform: "translateX(-50%)",
+    background: "#21261F",
+    color: "#F5F2EC",
+    padding: "10px 18px",
+    borderRadius: 8,
+    fontSize: 13.5,
+    boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+    zIndex: 60,
+  },
+};

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description"
+    content="Walk the floor, see which board rooms are free, and book one — no login required for browsing." />
+  <title>CRBS - MS Education Academy</title>
+
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CRBS" />
+  <!--<link rel="apple-touch-icon" href="/icon-192.png" />-->
+  <link rel="icon" type="image/jpeg" href="/static/favicon.jpeg">
+  <link rel="shortcut icon" href="/static/favicon.jpeg">
+  <link rel="apple-touch-icon" href="/static/favicon.jpeg">
+
+  <!-- Google Fonts — loaded async so the page never blocks on a slow CDN.
+       The page renders immediately with system fonts; web fonts swap in once ready. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap%22
+    onload=" this.rel='stylesheet'" />
+  <noscript>
+    <link
+      href="
+    https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap%22
+    rel="stylesheet" />
+  </noscript>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+
+<body>
+
+  <!-- ===== Entry veil ===== -->
+  <div id="entry-veil" class="entry-veil">
+    <div class="entry-mark">
+      <div class="entry-logo">
+        <img src="/static/images/logo.png" class="brand-logo" alt="MSEA" width="80%" height="20%">
+      </div><br>
+      <span class="entry-eyebrow">Meeting Management System</span>
+      <h1 class="entry-title">CRBS</h1>
+      <p id="entry-subtitle" class="entry-sub">Walk the corridor and see what's free.</p>
+      <button class="entry-btn" onclick="enterFloor()">
+        <span>Step in</span>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== Header ===== -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <img src="/static/images/logo.png" class="brand-logo brand-logo--full" alt="MS Education Academy">
+      </div>
+
+      <nav class="tab-nav" role="tablist">
+        <button id="tab-about" class="tab-btn" role="tab" aria-selected="false"
+          onclick="showTab('about')">About</button>
+        <button id="tab-corridor" class="tab-btn active" role="tab" aria-selected="true"
+          onclick="showTab('corridor')">Corridor</button>
+        <button id="tab-agenda" class="tab-btn" role="tab" aria-selected="false"
+          onclick="showTab('agenda')">Agenda</button>
+        <button id="tab-book" class="tab-btn" role="tab" aria-selected="false" onclick="showTab('book')">Book a
+          room</button>
+      </nav>
+
+      <div class="header-right">
+        <span id="status-time" class="status-time"></span>
+      </div>
+    </div>
+  </header>
+
+  <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
+
+  <main class="main-content">
+
+    <!-- ── ABOUT VIEW ── -->
+    <section id="view-about" class="view" aria-labelledby="tab-about">
+      <div class="view-header">
+        <div>
+          <p class="view-eyebrow">Information</p>
+          <h1 class="view-title">About</h1>
+        </div>
+        <p class="view-note">Centralized meeting scheduling & coordination.</p>
+      </div>
+
+      <div class="about-card">
+        <h2 class="about-welcome">Welcome!</h2>
+        <p class="about-text">
+          The Meeting Management System (MMS) is the centralized platform for planning, scheduling, coordinating, and
+          managing meetings conducted at the Corporate Office. The system is designed to enhance collaboration, optimize
+          the utilization of conference facilities, reduce unnecessary travel by branch Principals and staff, and ensure
+          that meetings are conducted in a well-planned and efficient manner.
+        </p>
+        <p class="about-text">
+          Through this platform, stakeholders can conveniently access meeting schedules, conference room availability,
+          meeting agendas, organizers, and participant details, enabling better planning and minimizing operational
+          disruptions.
+        </p>
+      </div>
+    </section>
+
+    <!-- ── CORRIDOR VIEW (live status) ── -->
+    <section id="view-corridor" class="view active" aria-labelledby="tab-corridor">
+
+      <div class="corridor-intro">
+        <p class="corridor-eyebrow">Live · updates every minute</p>
+        <h1 class="corridor-title">Walk the corridor</h1>
+        <p class="corridor-hint">Scroll or swipe through the hallway. Every door glows with what's happening inside.</p>
+      </div>
+
+      <!-- Floor filter tabs -->
+      <div class="floor-tabs" id="corridor-floor-tabs" role="tablist" aria-label="Filter by floor">
+        <!-- Dynamically populated by JS -->
+      </div>
+
+      <div class="hallway-shell">
+        <button class="hall-nav prev" onclick="scrollHallway(-1)" aria-label="Previous room">‹</button>
+        <div id="hallway" class="hallway" aria-live="polite">
+          <div class="hall-floor"></div>
+          <div id="hallway-track" class="hallway-track">
+            <!-- doors injected by JS -->
+            <div class="door-skeleton"></div>
+            <div class="door-skeleton"></div>
+            <div class="door-skeleton"></div>
+          </div>
+        </div>
+        <button class="hall-nav next" onclick="scrollHallway(1)" aria-label="Next room">›</button>
+      </div>
+
+      <div id="hallway-dots" class="hallway-dots"></div>
+    </section>
+
+    <!-- ── AGENDA VIEW ── -->
+    <section id="view-agenda" class="view" aria-labelledby="tab-agenda">
+      <div class="view-header">
+        <div>
+          <p class="view-eyebrow">Reception signage</p>
+          <h1 class="view-title">Day agenda</h1>
+        </div>
+      </div>
+
+      <div class="agenda-controls">
+        <div class="date-nav">
+          <input id="agenda-date" type="date" class="date-input" onchange="loadAgenda()" />
+        </div>
+        <div class="agenda-filter-row">
+          <!-- Floor quick-filter -->
+          <div class="floor-tabs floor-tabs--sm" id="agenda-floor-tabs" role="tablist">
+            <!-- Dynamically populated by JS -->
+          </div>
+          <!-- Room drop-down (populated by JS with optgroups) -->
+          <select id="agenda-room-filter" class="room-select" onchange="loadAgenda()">
+            <option value="">All rooms</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="agenda-list" class="agenda-list">
+        <p class="empty-state">Loading…</p>
+      </div>
+    </section>
+
+    <!-- ── BOOK VIEW ── -->
+    <section id="view-book" class="view" aria-labelledby="tab-book">
+      <div class="view-header">
+        <div>
+          <p class="view-eyebrow">Front desk</p>
+          <h1 class="view-title">Reserve a room</h1>
+        </div>
+        <p class="view-note">An admin needs to sign off before a booking goes on the board.</p>
+      </div>
+
+
+
+      <div id="admin-login-section" class="booking-form">
+        <p class="form-kicker">Admin sign-off</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="book-username">Admin username *</label>
+            <input id="book-username" type="text" placeholder="Enter admin username" required />
+          </div>
+          <div class="form-group">
+            <label for="book-password">Admin password *</label>
+            <input id="book-password" type="password" placeholder="Enter admin password" required
+              onkeydown="if(event.key==='Enter'){ event.preventDefault(); verifyAdmin(); }" />
+          </div>
+        </div>
+        <button type="button" id="admin-verify-btn" class="btn-primary" onclick="verifyAdmin()">
+          <span class="btn-label">Verify admin</span>
+          <span class="btn-spinner hidden"></span>
+        </button>
+      </div>
+
+      <form id="booking-form" class="booking-form hidden" onsubmit="submitBooking(event)" novalidate>
+        <p class="form-kicker">Booking details</p>
+        <div class="form-group">
+          <label for="book-room">Room *</label>
+          <select id="book-room" required>
+            <option value="">Select a room…</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="book-mode">Meeting Mode *</label>
+          <select id="book-mode" required>
+            <option value="offline">Offline (In-person)</option>
+            <option value="online">Online (Microsoft Teams)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="book-title">Meeting title *</label>
+          <input id="book-title" type="text" maxlength="120" placeholder="e.g. Executive Strategy Meeting" required />
+        </div>
+
+        <div class="form-group">
+          <label for="book-name">Organiser *</label>
+          <input id="book-name" type="text" maxlength="80" placeholder="Your name" required />
+        </div>
+
+        <div class="form-group">
+          <label for="book-email">Organiser's Email *</label>
+          <input id="book-email" type="email" placeholder="e.g. name@mseducation.academy" required />
+        </div>
+
+        <div class="form-group">
+          <label for="book-attendees">Attendees</label>
+          <input id="book-attendees" type="text" placeholder="e.g. John Doe, Sarah Smith (comma separated)" />
+        </div>
+
+        <div class="form-group">
+          <label for="book-attendees-emails">Attendees' Emails</label>
+          <input id="book-attendees-emails" type="text" placeholder="e.g. john@example.com, sarah@example.com" />
+        </div>
+
+        <div class="form-group">
+          <label for="book-cc-emails">CC Emails</label>
+          <input id="book-cc-emails" type="text"
+            placeholder="e.g. manager@mseducation.academy, boss@mseducation.academy" />
+        </div>
+
+        <div class="form-group">
+          <label for="book-date">Date *</label>
+          <input id="book-date" type="date" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="book-start">Start time *</label>
+            <input id="book-start" type="time" required />
+          </div>
+          <div class="form-group">
+            <label for="book-end">End time *</label>
+            <input id="book-end" type="time" required />
+          </div>
+        </div>
+
+        <button id="book-submit" type="submit" class="btn-primary">
+          <span class="btn-label">Confirm booking</span>
+          <span class="btn-spinner hidden"></span>
+        </button>
+        <div id="form-error" class="form-error hidden" role="alert"></div>
+      </form>
+    </section>
+
+  </main>
+
+  <!-- ===== Room detail panel (slides in when a door is opened) ===== -->
+  <div id="room-panel" class="room-panel hidden">
+    <div class="room-panel-backdrop" onclick="closeRoomPanel()"></div>
+    <div class="room-panel-sheet" role="dialog" aria-modal="true" aria-labelledby="room-panel-title">
+      <button class="room-panel-close" onclick="closeRoomPanel()" aria-label="Close">✕</button>
+      <div id="room-panel-body"><!-- injected --></div>
+    </div>
+  </div>
+
+  <!-- ===== Edit Booking Modal ===== -->
+  <div id="edit-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+    <div class="modal-box edit-modal-box">
+      <h2 id="edit-modal-title" class="modal-title">Edit booking</h2>
+      <p class="modal-desc">Admin credentials required. Only changed fields will be saved.</p>
+      <div class="modal-booking-info" id="edit-booking-info"></div>
+
+      <!-- Admin sign-off row -->
+      <div class="form-row modal-cred-row">
+        <div class="form-group">
+          <label for="edit-username">Admin username *</label>
+          <input id="edit-username" type="text" class="modal-input" placeholder="Admin username" />
+        </div>
+        <div class="form-group">
+          <label for="edit-password">Admin password *</label>
+          <input id="edit-password" type="password" class="modal-input" placeholder="Admin password" />
+        </div>
+      </div>
+
+      <!-- Editable fields -->
+      <div class="form-group">
+        <label for="edit-room">Room</label>
+        <select id="edit-room" class="modal-input"></select>
+      </div>
+
+      <div class="form-group">
+        <label for="edit-mode">Meeting Mode</label>
+        <select id="edit-mode" class="modal-input">
+          <option value="offline">Offline (In-person)</option>
+          <option value="online">Online (Microsoft Teams)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="edit-start">Start time</label>
+          <input id="edit-start" type="time" class="modal-input" />
+        </div>
+        <div class="form-group">
+          <label for="edit-end">End time</label>
+          <input id="edit-end" type="time" class="modal-input" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="edit-attendees">Attendees</label>
+        <input id="edit-attendees" type="text" class="modal-input" placeholder="Comma-separated names" />
+      </div>
+
+      <div class="form-group">
+        <label for="edit-attendees-emails">Attendees' Emails</label>
+        <input id="edit-attendees-emails" type="text" class="modal-input" placeholder="Comma-separated emails" />
+      </div>
+
+      <div class="form-group">
+        <label for="edit-cc-emails">CC Emails</label>
+        <input id="edit-cc-emails" type="text" class="modal-input" placeholder="Comma-separated CC emails" />
+      </div>
+
+      <div id="edit-error" class="form-error hidden" role="alert"></div>
+
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeEdit()">Cancel</button>
+        <button class="btn-primary edit-save-btn" onclick="confirmEdit()" id="edit-confirm-btn">
+          <span class="btn-label">Save changes</span>
+          <span class="btn-spinner hidden"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Cancel Modal ===== -->
+  <div id="cancel-modal" class="modal-overlay hidden" role="dialog" aria-modal="true"
+    aria-labelledby="cancel-modal-title">
+    <div class="modal-box">
+      <h2 id="cancel-modal-title" class="modal-title">Cancel booking</h2>
+      <p class="modal-desc">Enter admin credentials and the original booker's name to confirm.</p>
+      <div class="modal-booking-info" id="cancel-booking-info"></div>
+      <input id="cancel-name-input" type="text" class="modal-input" placeholder="Original booker's name" />
+      <input id="cancel-username-input" type="text" class="modal-input" placeholder="Admin username" />
+      <input id="cancel-password-input" type="password" class="modal-input" placeholder="Admin password" />
+      <div id="cancel-error" class="form-error hidden" role="alert"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeCancel()">Never mind</button>
+        <button class="btn-danger" onclick="confirmCancel()" id="cancel-confirm-btn">Cancel booking</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('[SW] Registered:', reg.scope))
+          .catch(err => console.warn('[SW] Registration failed', err));
+      });
+    }
+  </script>
+</body>
+
+</html>

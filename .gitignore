@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Databases / Excel data
+**/data/bookings.xlsx
+**/data/backups/
+**/data/*.lock
+*.lock
+
+# Logs
+*.log
+
+# Editors
+.vscode/
+.idea/
+.DS_Store
