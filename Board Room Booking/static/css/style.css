@@ -1826,7 +1826,8 @@ body {
 
 @media (max-width: 640px) {
   .brand-subtitle {
-    display: none;
+    display: block;
+    font-size: 0.68rem;
   }
 
   .brand-title {
@@ -1835,8 +1836,13 @@ body {
 }
 
 @media (max-width: 440px) {
-  .brand-text {
-    display: none;
+  .brand-title {
+    font-size: 0.8rem;
+  }
+
+  .brand-subtitle {
+    display: block;
+    font-size: 0.6rem;
   }
 }
 
@@ -2172,15 +2178,101 @@ body {
   border-top: 1px solid var(--border);
 }
 
-.powered-by-logo {
-  height: 48px;
-  width: auto;
-  max-width: 100%;
-  object-fit: contain;
-  opacity: 0.95;
-  transition: opacity 0.3s ease;
+.powered-by-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 20px;
+  padding: 12px 24px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s var(--ease);
 }
 
-.powered-by-logo:hover {
-  opacity: 1;
+.powered-by-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+.powered-by-logo {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.powered-by-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  line-height: 1.25;
+}
+
+.powered-by-label {
+  font-size: 0.76rem;
+  color: #7c7c80;
+  font-weight: 500;
+  font-family: var(--font-body);
+}
+
+.powered-by-brand {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  display: flex;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.brand-digital {
+  color: #10853f;
+}
+
+.brand-enablement {
+  color: #0077c2;
+}
+
+@media (max-width: 480px) {
+  .powered-by-badge {
+    padding: 10px 18px;
+    gap: 10px;
+  }
+
+  .powered-by-logo {
+    height: 38px;
+  }
+
+  .powered-by-brand {
+    font-size: 1rem;
+  }
+}
+
+/* Position the powered-by badge at the bottom of the entry veil */
+.entry-veil .powered-by {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+@media (max-height: 580px) {
+  .entry-veil {
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow-y: auto;
+    padding: 40px 0;
+  }
+
+  .entry-veil .powered-by {
+    position: static;
+    transform: none;
+    margin-top: 24px;
+    margin-bottom: 24px;
+  }
 }

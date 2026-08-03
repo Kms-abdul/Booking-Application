@@ -49,11 +49,6 @@ function enterFloor() {
   document.getElementById('entry-veil').classList.add('entered');
   showTab('about');
 }
-// Auto-dismiss the entry veil shortly after load in case the user just scrolls.
-setTimeout(() => {
-  const veil = document.getElementById('entry-veil');
-  if (veil) veil.classList.add('entered');
-}, 4500);
 
 // ── Tab Navigation ─────────────────────────────────────────────────────────
 
