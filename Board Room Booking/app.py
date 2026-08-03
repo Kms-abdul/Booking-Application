@@ -70,11 +70,11 @@ def service_worker():
 # Icons served at root path so manifest can reference /icon-192.png etc.
 @app.route("/icon-192.png")
 def icon_192():
-    return send_from_directory("static/images", "favicon.jpeg")
+    return send_from_directory("static/icons", "icon-192.png")
 
 @app.route("/icon-512.png")
 def icon_512():
-    return send_from_directory("static/images", "favicon.jpeg")
+    return send_from_directory("static/icons", "icon-512.png")
 
 
 # ---------------------------------------------------------------------------

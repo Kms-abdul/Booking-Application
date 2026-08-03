@@ -9,14 +9,27 @@
 // Bump CACHE_VERSION whenever you deploy changes so PWA users get the update.
 // =============================================================================
 
-const CACHE_VERSION = 'v16';
+const CACHE_VERSION = 'v17';
 const CACHE_NAME = `room-booking-${CACHE_VERSION}`;
 
 const SHELL_URLS = [
   '/',
+  '/manifest.json',
   '/static/css/style.css',
+  // Modular JS bundle
   '/static/js/app.js',
+  '/static/js/api.js',
+  '/static/js/state.js',
+  '/static/js/utils.js',
+  '/static/js/ui.js',
+  '/static/js/rooms.js',
+  '/static/js/calendar.js',
+  '/static/js/booking.js',
+  '/static/js/modal.js',
+  // Images & icons
   '/static/images/favicon.jpeg',
+  '/static/icons/icon-192.png',
+  '/static/icons/icon-512.png',
 ];
 
 // ── Install: pre-cache the shell ─────────────────────────────────────────────
