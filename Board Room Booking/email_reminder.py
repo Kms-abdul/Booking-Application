@@ -140,6 +140,7 @@ def _build_booking_table(booking: dict) -> tuple[str, str]:
     Used in both confirmation and reminder emails.
     """
     attendees = (booking.get("attendees") or "").strip()
+    desc = (booking.get("description") or "").strip()
     meeting_mode = str(booking.get("meeting_mode", "") or "offline").strip().lower()
     meeting_link = str(booking.get("meeting_link", "") or "").strip()
 
@@ -149,6 +150,7 @@ def _build_booking_table(booking: dict) -> tuple[str, str]:
         f"  Title     : {booking['title']}\n"
         f"  Booked by : {booking['booked_by']}\n"
         + (f"  Attendees : {attendees}\n" if attendees else "")
+        + (f"  Purpose   : {desc}\n" if desc else "")
         + f"  Date      : {booking['date']}\n"
         f"  Time      : {booking['start_time']} – {booking['end_time']}\n"
     )
@@ -208,6 +210,16 @@ def _build_booking_table(booking: dict) -> tuple[str, str]:
         else ""
     )
 
+    desc_row = (
+        f"""
+        <tr style="background:#f4f4f8">
+          <td style="padding:10px 14px;font-weight:600;color:#555">Purpose</td>
+          <td style="padding:10px 14px">{desc}</td>
+        </tr>"""
+        if desc
+        else ""
+    )
+
     html = f"""
       <table cellpadding="8" cellspacing="0"
              style="border-collapse:collapse;width:100%;max-width:480px;
@@ -229,6 +241,7 @@ def _build_booking_table(booking: dict) -> tuple[str, str]:
           <td style="padding:10px 14px">{booking['booked_by']}</td>
         </tr>
         {attendees_row}
+        {desc_row}
         <tr style="background:#f4f4f8">
           <td style="padding:10px 14px;font-weight:600;color:#555">Date</td>
           <td style="padding:10px 14px">{booking['date']}</td>
@@ -318,12 +331,12 @@ def send_confirmation(booking: dict) -> bool:
     )
     organiser_name = booking.get("booked_by", "").strip()
     organiser_email = (booking.get("email") or "").strip()
-    if organiser_name and organiser_email:
-        msg["From"] = f'"{organiser_name}" <{organiser_email}>'
-    elif organiser_email:
-        msg["From"] = organiser_email
-    else:
-        msg["From"] = config.SMTP_FROM
+    msg["From"] = config.SMTP_FROM
+    if organiser_email:
+        if organiser_name:
+            msg["Reply-To"] = f'"{organiser_name}" <{organiser_email}>'
+        else:
+            msg["Reply-To"] = organiser_email
 
     msg["To"]   = ", ".join(recipients)
     msg["Cc"]   = ", ".join(cc_list)
@@ -428,12 +441,12 @@ def send_reminder(booking: dict) -> bool:
     )
     organiser_name = booking.get("booked_by", "").strip()
     organiser_email = (booking.get("email") or "").strip()
-    if organiser_name and organiser_email:
-        msg["From"] = f'"{organiser_name}" <{organiser_email}>'
-    elif organiser_email:
-        msg["From"] = organiser_email
-    else:
-        msg["From"] = config.SMTP_FROM
+    msg["From"] = config.SMTP_FROM
+    if organiser_email:
+        if organiser_name:
+            msg["Reply-To"] = f'"{organiser_name}" <{organiser_email}>'
+        else:
+            msg["Reply-To"] = organiser_email
 
     msg["To"]   = ", ".join(recipients)
     msg["Cc"]   = ", ".join(cc_list)

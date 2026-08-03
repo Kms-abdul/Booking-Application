@@ -42,7 +42,7 @@ ROOMS_SHEET       = "Rooms"
 REMINDER_SHEET    = "ReminderLog"
  
 BOOKINGS_HEADERS  = ["id", "room", "date", "start_time", "end_time",
-                      "title", "booked_by", "email", "attendees", "attendee_emails", "meeting_mode", "meeting_link", "cc_emails", "created_at", "status"]
+                      "title", "booked_by", "email", "attendees", "attendee_emails", "meeting_mode", "meeting_link", "cc_emails", "description", "created_at", "status"]
 ROOMS_HEADERS     = ["room_name", "color", "capacity", "floor", "teams_link"]
 REMINDER_HEADERS  = ["booking_id", "reminder_sent_at"]
  
@@ -234,6 +234,17 @@ def ensure_db():
                     ws.cell(row=1, column=len(headers) + 1, value="cc_emails")
                 _save_wb(wb)
                 headers = [cell.value for cell in ws[1]]
+
+            # Ensure "description" column exists
+            if "description" not in headers:
+                idx = next((headers.index(k) + 1 for k in ["created_at", "create", "status"] if k in headers), None)
+                if idx is not None:
+                    ws.insert_cols(idx)
+                    ws.cell(row=1, column=idx, value="description")
+                else:
+                    ws.cell(row=1, column=len(headers) + 1, value="description")
+                _save_wb(wb)
+                headers = [cell.value for cell in ws[1]]
            
             # Ensure "floor" column exists in Rooms sheet
             ws_r = wb[ROOMS_SHEET]
@@ -349,6 +360,7 @@ def _serialize_booking(row):
         "meeting_mode": str(row.get("meeting_mode", "") or "offline"),
         "meeting_link": str(row.get("meeting_link", "") or ""),
         "cc_emails":    str(row.get("cc_emails", "") or ""),
+        "description":  str(row.get("description", "") or ""),
         "created_at": str(row.get("created_at", "") or ""),
         "status":     str(row.get("status", "") or ""),
     }
@@ -374,7 +386,7 @@ def _parse_emails(emails_str):
 
 def add_booking(room, booking_date, start_time_str, end_time_str,
                 title, booked_by, email="", attendees="", attendee_emails="",
-                meeting_mode="offline", meeting_link="", cc_emails=""):
+                meeting_mode="offline", meeting_link="", cc_emails="", description=""):
     """
     Atomically check for conflicts and write a new booking.
     Returns (booking_dict, None) on success.
@@ -499,6 +511,7 @@ def add_booking(room, booking_date, start_time_str, end_time_str,
             "meeting_mode": m_mode,
             "meeting_link": m_link,
             "cc_emails": cc_emails.strip(),
+            "description": description.strip(),
             "created_at": now_str,
             "status": "active",
         }
@@ -519,6 +532,7 @@ def add_booking(room, booking_date, start_time_str, end_time_str,
         "meeting_mode": m_mode,
         "meeting_link": m_link,
         "cc_emails": cc_emails.strip(),
+        "description": description.strip(),
         "created_at": now_str,
         "status":     "active",
     }, None
@@ -540,6 +554,7 @@ def update_booking(booking_id, updates):
     new_att_emails = updates.get('attendee_emails')
     new_meeting_mode = updates.get('meeting_mode')
     new_cc_emails = updates.get('cc_emails')
+    new_desc = updates.get('description')
  
     with _lock():
         wb      = _load_wb()
@@ -623,6 +638,7 @@ def update_booking(booking_id, updates):
         if new_att   is not None: target_row[col['attendees']].value  = new_att.strip()
         if new_att_emails is not None: target_row[col['attendee_emails']].value = new_att_emails.strip()
         if new_cc_emails is not None: target_row[col['cc_emails']].value = new_cc_emails.strip()
+        if new_desc is not None: target_row[col['description']].value = new_desc.strip()
 
         if new_meeting_mode is not None:
             old_mode = str(target_data.get('meeting_mode', '') or '').strip().lower()

@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(loadStatus, 60_000);
 
   document.getElementById('hallway-track').addEventListener('scroll', onHallwayScroll, { passive: true });
+  initFormTextareas();
 });
 
 function enterFloor() {
@@ -745,6 +746,7 @@ async function submitBooking(e) {
     end_time: document.getElementById('book-end').value,
     username: username,
     password: password,
+    description: (document.getElementById('book-description') ? document.getElementById('book-description').value : '').trim(),
   };
 
   if (!payload.room) return showFieldError(errorEl, 'Please select a room.');
@@ -776,6 +778,10 @@ async function submitBooking(e) {
     if (data.ok) {
       showToast(`✅ Booked! ${payload.room} on ${payload.date} from ${payload.start_time}–${payload.end_time}`, 'success');
       document.getElementById('booking-form').reset();
+      // Reset height of textareas
+      document.querySelectorAll('#booking-form textarea').forEach(textarea => {
+        textarea.style.height = '44px';
+      });
       document.getElementById('book-username').value = '';
       document.getElementById('book-password').value = '';
       document.getElementById('booking-form').classList.add('hidden');
@@ -823,6 +829,15 @@ function openEdit(bookingId) {
       document.getElementById('edit-attendees-emails').value = b.attendee_emails || '';
       document.getElementById('edit-mode').value = b.meeting_mode || 'offline';
       document.getElementById('edit-cc-emails').value = b.cc_emails || '';
+      document.getElementById('edit-description').value = b.description || '';
+
+      // Trigger input event to auto-resize textareas
+      setTimeout(() => {
+        ['edit-attendees-emails', 'edit-cc-emails', 'edit-description'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.dispatchEvent(new Event('input'));
+        });
+      }, 50);
 
       // Populate room dropdown grouped by floor
       const sel = document.getElementById('edit-room');
@@ -885,6 +900,7 @@ async function confirmEdit() {
     attendees: document.getElementById('edit-attendees').value.trim(),
     attendee_emails: document.getElementById('edit-attendees-emails').value.trim(),
     cc_emails: document.getElementById('edit-cc-emails').value.trim(),
+    description: document.getElementById('edit-description').value.trim(),
   };
 
   try {
@@ -1016,4 +1032,89 @@ function esc(str) {
 }
 function escAttr(str) {
   return esc(str).replace(/'/g, '&#39;');
+}
+
+// ── Auto-resizing and default domain logic ───────────────────────────────────
+
+function initFormTextareas() {
+  const ids = ['book-attendees-emails', 'book-cc-emails', 'book-description', 'edit-attendees-emails', 'edit-cc-emails', 'edit-description'];
+  ids.forEach(setupAutoResizeTextarea);
+  
+  ['book-attendees-emails', 'book-cc-emails', 'edit-attendees-emails', 'edit-cc-emails'].forEach(setupEmailDefaultDomain);
+}
+
+function setupAutoResizeTextarea(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  function resize() {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
+  el.addEventListener('input', resize);
+  el.addEventListener('focus', resize);
+}
+
+function setupEmailDefaultDomain(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  const domain = '@mseducation.academy';
+
+  el.addEventListener('focus', () => {
+    if (!el.value.trim()) {
+      el.value = domain;
+      setTimeout(() => el.setSelectionRange(0, 0), 0);
+    }
+  });
+
+  el.addEventListener('blur', () => {
+    if (el.value.trim() === domain || el.value.trim() === '') {
+      el.value = '';
+      el.style.height = '44px';
+    }
+  });
+
+  el.addEventListener('input', () => {
+    if (el.value === '') return;
+    const val = el.value;
+    const cursor = el.selectionStart;
+    const lastChar = val.charAt(cursor - 1);
+    
+    if (lastChar === ',' || lastChar === ';') {
+      const textBefore = val.slice(0, cursor - 1).trim();
+      const textAfter = val.slice(cursor).trim();
+      const emailsBefore = textBefore.split(/[,;]/);
+      const lastEmail = emailsBefore[emailsBefore.length - 1].trim();
+
+      if (lastEmail && !lastEmail.includes('@')) {
+        emailsBefore[emailsBefore.length - 1] = lastEmail + domain;
+      }
+
+      const newTextBefore = emailsBefore.join(', ') + ', ';
+      const newTextAfter = textAfter || domain;
+      
+      el.value = newTextBefore + newTextAfter;
+      const targetCursor = newTextBefore.length;
+      el.setSelectionRange(targetCursor, targetCursor);
+    }
+  });
+
+  el.addEventListener('paste', () => {
+    setTimeout(() => {
+      const val = el.value;
+      const parts = val.split(/[,;]/);
+      const formatted = parts.map(part => {
+        const trimmed = part.trim();
+        if (trimmed && !trimmed.includes('@')) {
+          return trimmed + domain;
+        }
+        return trimmed;
+      }).filter(Boolean).join(', ');
+      
+      el.value = formatted;
+      el.dispatchEvent(new Event('input'));
+    }, 0);
+  });
 }

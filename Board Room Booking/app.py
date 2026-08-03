@@ -197,6 +197,7 @@ def api_create_booking():
             attendee_emails = (data.get("attendee_emails") or "").strip(),
             meeting_mode    = (data.get("meeting_mode") or "offline").strip(),
             cc_emails       = (data.get("cc_emails") or "").strip(),
+            description     = (data.get("description") or "").strip(),
         )
     except ValueError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
@@ -258,7 +259,7 @@ def api_edit_booking(booking_id):
 
     # Collect only the editable fields that were actually provided
     updates = {}
-    for field in ("room", "start_time", "end_time", "attendees", "attendee_emails", "meeting_mode", "cc_emails"):
+    for field in ("room", "start_time", "end_time", "attendees", "attendee_emails", "meeting_mode", "cc_emails", "description"):
         if field in data and data[field] is not None:
             updates[field] = data[field]
 

@@ -303,13 +303,17 @@
 
         <div class="form-group">
           <label for="book-attendees-emails">Attendees' Emails</label>
-          <input id="book-attendees-emails" type="text" placeholder="e.g. john@example.com, sarah@example.com" />
+          <textarea id="book-attendees-emails" placeholder="e.g. john@mseducation.academy, sarah@mseducation.academy"></textarea>
         </div>
 
         <div class="form-group">
           <label for="book-cc-emails">CC Emails</label>
-          <input id="book-cc-emails" type="text"
-            placeholder="e.g. manager@mseducation.academy, boss@mseducation.academy" />
+          <textarea id="book-cc-emails" placeholder="e.g. manager@mseducation.academy, boss@mseducation.academy"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="book-description">Meeting Purpose / Description</label>
+          <textarea id="book-description" placeholder="e.g. Discuss quarterly sales targets and market expansion plans"></textarea>
         </div>
 
         <div class="form-group">
@@ -396,12 +400,17 @@
 
       <div class="form-group">
         <label for="edit-attendees-emails">Attendees' Emails</label>
-        <input id="edit-attendees-emails" type="text" class="modal-input" placeholder="Comma-separated emails" />
+        <textarea id="edit-attendees-emails" class="modal-input" placeholder="Comma-separated emails"></textarea>
       </div>
 
       <div class="form-group">
         <label for="edit-cc-emails">CC Emails</label>
-        <input id="edit-cc-emails" type="text" class="modal-input" placeholder="Comma-separated CC emails" />
+        <textarea id="edit-cc-emails" class="modal-input" placeholder="Comma-separated CC emails"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="edit-description">Meeting Purpose / Description</label>
+        <textarea id="edit-description" class="modal-input" placeholder="Meeting purpose / description"></textarea>
       </div>
 
       <div id="edit-error" class="form-error hidden" role="alert"></div>

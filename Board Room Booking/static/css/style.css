@@ -1353,6 +1353,7 @@ body {
 }
 
 .booking-form input,
+.booking-form textarea,
 .booking-form select {
   background: rgba(255, 255, 255, .045);
   border: 1px solid var(--border);
@@ -1364,6 +1365,14 @@ body {
   transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
   outline: none;
   width: 100%;
+}
+
+.booking-form textarea,
+textarea.modal-input {
+  resize: none;
+  min-height: 44px;
+  height: 44px;
+  overflow-y: hidden;
 }
 
 .booking-form input::placeholder {
