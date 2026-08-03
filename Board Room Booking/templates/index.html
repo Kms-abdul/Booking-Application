@@ -8,12 +8,11 @@
     content="Walk the floor, see which board rooms are free, and book one — no login required for browsing." />
   <title>MMS - MS Education Academy</title>
 
-  <link rel="manifest" href="/manifest.json" />
+  <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="MMS " />
-  <!--<link rel="apple-touch-icon" href="/icon-192.png" />-->
   <link rel="icon" type="image/jpeg" href="/static/images/favicon.jpeg">
   <link rel="shortcut icon" href="/static/images/favicon.jpeg">
   <link rel="apple-touch-icon" href="/static/images/favicon.jpeg">
@@ -443,7 +442,7 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js"></script>
+  <script type="module" src="/static/js/app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
