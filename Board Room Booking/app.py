@@ -229,11 +229,13 @@ def api_create_booking():
     logger.info("New booking: %s in %s on %s", booking["title"],
                 booking["room"], booking["date"])
 
-    # Send confirmation email immediately (non-blocking — failure is logged, not raised)
-    try:
-        email_reminder.send_confirmation(booking)
-    except Exception as exc:
-        logger.warning("[Email] Confirmation email failed (non-fatal): %s", exc)
+    # Send confirmation email asynchronously (non-blocking to prevent HTTP latency)
+    import threading
+    threading.Thread(
+        target=email_reminder.send_confirmation,
+        args=(booking,),
+        daemon=True
+    ).start()
 
     return jsonify({"ok": True, "booking": booking}), 201
 

@@ -357,6 +357,7 @@ async function openRoomPanel(roomName) {
         <div class="rp-now-meta">
           👤 ${esc(status.current_booking.booked_by)}<br/>
           🕐 ${status.current_booking.start_time}–${status.current_booking.end_time}
+          ${status.current_booking.description ? `<br/>📝 <b>Purpose:</b> ${esc(status.current_booking.description)}` : ''}
         </div>
         ${status.current_booking.meeting_mode === 'online' && status.current_booking.meeting_link ? (() => {
           const parts = status.current_booking.meeting_link.split('|');
@@ -403,10 +404,17 @@ async function loadRoomTimeline(roomName) {
         const url = parts[0];
         return ` <a href="${escAttr(url)}" target="_blank" style="display:inline-flex; align-items:center; padding:2px 6px; font-size:10px; font-weight:600; background:#e0e7ff; color:#4338ca; border-radius:4px; text-decoration:none; margin-left:6px">💻 Join Teams</a>`;
       })() : '';
+      const descHTML = b.description ? `<div style="font-size: 11px; color: var(--text-mute); margin-top: 4px; font-style: italic;">📝 <b>Purpose:</b> ${esc(b.description)}</div>` : '';
       return `
-        <div class="rp-timeline-item">
-          <span class="rp-timeline-time">${b.start_time}</span>
-          <span class="rp-timeline-title">${esc(b.title)}${modeHTML}</span>
+        <div class="rp-timeline-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <div style="display: flex; align-items: center; width: 100%; justify-content: space-between; gap: 10px;">
+            <span class="rp-timeline-time">${b.start_time} – ${b.end_time}</span>
+            ${modeHTML}
+          </div>
+          <div class="rp-timeline-title" style="font-size: 0.86rem; font-weight: 500;">
+            ${esc(b.title)} <span style="font-weight: normal; font-size: 0.78rem; color: var(--text-mute);">by ${esc(b.booked_by)}</span>
+          </div>
+          ${descHTML}
         </div>`;
     }).join('');
   } catch (err) {
@@ -624,6 +632,11 @@ function renderAgenda(bookings, date) {
       `;
     }
 
+    let descriptionHTML = '';
+    if (b.description) {
+      descriptionHTML = `<div class="agenda-description" style="margin-top: 6px; font-size: 0.82rem; color: var(--text-dim); line-height: 1.4;">📝 <b>Purpose:</b> ${esc(b.description)}</div>`;
+    }
+
     const roomObj = _rooms.find(r => r.name === b.room);
     const floorNum = roomObj ? roomObj.floor : '';
 
@@ -638,6 +651,7 @@ function renderAgenda(bookings, date) {
             &nbsp;👤 ${esc(b.booked_by)}
           </div>
           ${attendeesHTML}
+          ${descriptionHTML}
           ${onlineHTML}
         </div>
         <div onclick="event.stopPropagation()">${actionHTML}</div>

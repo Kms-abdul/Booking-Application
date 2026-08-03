@@ -314,7 +314,7 @@ def send_confirmation(booking: dict) -> bool:
         <!-- Footer -->
         <div style="padding:16px 32px;background:#f4f4f8;
                     font-size:12px;color:#aaa;text-align:center">
-          Meeting Management System System
+          Meeting Management System
         </div>
       </div>
     </body>
@@ -424,7 +424,7 @@ def send_reminder(booking: dict) -> bool:
         <!-- Footer -->
         <div style="padding:16px 32px;background:#f4f4f8;
                     font-size:12px;color:#aaa;text-align:center">
-          Meeting Management System System
+          Meeting Management System
         </div>
       </div>
     </body>
