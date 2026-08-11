@@ -62,6 +62,19 @@ export async function verifyUser() {
     form.dataset.username = username;
     form.dataset.password = password;
 
+    const emailEl = document.getElementById('book-email');
+    if (emailEl) {
+      if (data.email) {
+        emailEl.value = data.email;
+        emailEl.readOnly = true;
+        emailEl.style.backgroundColor = '#f3f4f6';
+      } else {
+        emailEl.value = '';
+        emailEl.readOnly = false;
+        emailEl.style.backgroundColor = '';
+      }
+    }
+
     if (data.role === 'admin') {
       document.getElementById('admin-dashboard-btn').classList.remove('hidden');
     } else {

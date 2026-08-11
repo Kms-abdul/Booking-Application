@@ -133,12 +133,11 @@ export function openCancel(bookingId) {
         Booked by: <b>${esc(b.booked_by)}</b>`;
     });
 
-  document.getElementById('cancel-name-input').value = '';
   document.getElementById('cancel-username-input').value = '';
   document.getElementById('cancel-password-input').value = '';
   document.getElementById('cancel-error').classList.add('hidden');
   document.getElementById('cancel-modal').classList.remove('hidden');
-  setTimeout(() => document.getElementById('cancel-name-input').focus(), 100);
+  setTimeout(() => document.getElementById('cancel-username-input').focus(), 100);
 }
 
 export function closeCancel() {
@@ -148,14 +147,13 @@ export function closeCancel() {
 
 export async function confirmCancel() {
   if (!state.cancelId) return;
-  const name = document.getElementById('cancel-name-input').value.trim();
   const uname = document.getElementById('cancel-username-input').value.trim();
   const pwd = document.getElementById('cancel-password-input').value;
   const errEl = document.getElementById('cancel-error');
   const btn = document.getElementById('cancel-confirm-btn');
 
-  if (!name || !uname || !pwd) {
-    errEl.textContent = 'Please enter name, username, and PIN.';
+  if (!uname || !pwd) {
+    errEl.textContent = 'Please enter username and PIN.';
     errEl.classList.remove('hidden');
     return;
   }
@@ -167,7 +165,7 @@ export async function confirmCancel() {
     const res = await fetch(`/api/bookings/${state.cancelId}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cancelled_by: name, username: uname, password: pwd }),
+      body: JSON.stringify({ username: uname, password: pwd }),
     });
     const data = await res.json();
 

@@ -157,7 +157,11 @@ def api_verify_user():
     pin = data.get("password")  # The frontend sends "password"
     user = excel_db.verify_user(username, pin)
     if user:
-        return jsonify({"ok": True, "role": user.get("role", "user")})
+        return jsonify({
+            "ok": True, 
+            "role": user.get("role", "user"), 
+            "email": user.get("email", "")
+        })
     return jsonify({"ok": False, "error": "Invalid username or PIN"}), 401
 
 
@@ -311,40 +315,47 @@ def api_edit_booking(booking_id):
 def api_cancel_booking(booking_id):
     """
     Cancel a booking.
-    Requires JSON body: { "cancelled_by": "<name>" }
-    The name must match booked_by (case-insensitive) for ownership check.
+    Requires JSON body: { "username": "<name>", "password": "<pin>" }
+    The user's email must match the booking's email, unless they are an admin.
     """
     data         = request.get_json(silent=True) or {}
-    cancelled_by = (data.get("cancelled_by") or "").strip()
 
     user = excel_db.verify_user(data.get("username"), data.get("password"))
     if not user:
         return jsonify({"ok": False, "error": "Invalid username or PIN"}), 401
 
     try:
-        # Fetch the booking first to check name
         existing = excel_db.get_booking_by_id(booking_id)
         if existing is None:
             return jsonify({"ok": False, "error": "Booking not found"}), 404
 
-        # Ownership guard — soft check (no login, just name match)
         if existing["status"] == "cancelled":
             return jsonify({"ok": False, "error": "Already cancelled"}), 409
 
-        if cancelled_by.lower() != existing["booked_by"].lower():
+        # Ownership guard — check email match or admin role
+        is_admin = user.get("role") == "admin"
+        user_email = user.get("email", "").strip().lower()
+        booking_email = existing.get("email", "").strip().lower()
+
+        if not is_admin and (not user_email or user_email != booking_email):
             return jsonify({
                 "ok": False,
-                "error": (
-                    "Name doesn't match the original booker. "
-                    f"Enter '{existing['booked_by']}' to confirm cancellation."
-                )
+                "error": "You can only cancel meetings that you booked (email mismatch)."
             }), 403
 
         cancelled = excel_db.cancel_booking(booking_id)
         if cancelled is None:
             return jsonify({"ok": False, "error": "Could not cancel booking"}), 500
 
-        logger.info("Booking %s cancelled by %s", booking_id, cancelled_by)
+        # Send cancellation email asynchronously (non-blocking)
+        import threading
+        threading.Thread(
+            target=email_reminder.send_cancellation,
+            args=(cancelled, user.get("username")),
+            daemon=True
+        ).start()
+
+        logger.info("Booking %s cancelled by user %s", booking_id, user.get("username"))
         return jsonify({"ok": True, "booking": cancelled})
 
     except Exception as exc:

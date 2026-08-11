@@ -477,3 +477,104 @@ def send_reminder(booking: dict) -> bool:
     except Exception as exc:
         logger.error("[Email] Failed to send reminder to %s (CC: %s): %s", recipients, cc_list, exc)
         return False
+
+# ---------------------------------------------------------------------------
+# 3. Cancellation Email
+# ---------------------------------------------------------------------------
+
+def send_cancellation(booking: dict, cancelled_by: str) -> bool:
+    """
+    Send an email notifying attendees that a meeting has been cancelled.
+    Returns True on success, False on failure.
+    EMAIL_ENABLED in config.py must be True, otherwise this is a no-op.
+    """
+    if not config.EMAIL_ENABLED:
+        logger.info(
+            "[Email] EMAIL_ENABLED=False — skipping cancellation email for booking %s",
+            booking.get("id")
+        )
+        return False
+
+    plain_table, html_table = _build_booking_table(booking)
+
+    # ----- Plain text -----
+    plain = (
+        f"🚫 Meeting Cancelled\n"
+        f"-------------------\n"
+        f"The following meeting has been cancelled by {cancelled_by}.\n\n"
+        f"{plain_table}\n"
+    )
+
+    # ----- HTML -----
+    html = f"""
+    <html>
+    <body style="font-family:Arial,Helvetica,sans-serif;background:#f9f9f9;
+                 margin:0;padding:0">
+      <div style="max-width:520px;margin:32px auto;background:#fff;
+                  border-radius:12px;overflow:hidden;
+                  box-shadow:0 4px 20px rgba(0,0,0,.08)">
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#ef4444,#dc2626);
+                    padding:28px 32px">
+          <h1 style="margin:0;font-size:22px;color:#fff">🚫 Meeting Cancelled</h1>
+          <p style="margin:6px 0 0;color:rgba(255,255,255,.9);font-size:14px">
+            This meeting has been cancelled by <b>{cancelled_by}</b>.
+          </p>
+        </div>
+        <!-- Body -->
+        <div style="padding:28px 32px">
+          {html_table}
+        </div>
+        <!-- Footer -->
+        <div style="padding:16px 32px;background:#f4f4f8;
+                    font-size:12px;color:#aaa;text-align:center">
+          Meeting Management System
+        </div>
+      </div>
+    </body>
+    </html>
+    """
+
+    recipients = _get_recipients(booking)
+    cc_list = _get_cc_recipients(booking)
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = (
+        f"Cancelled: {booking['title']} — {booking['room']} "
+        f"on {booking['date']} at {booking['start_time']}"
+    )
+    organiser_name = booking.get("booked_by", "").strip()
+    organiser_email = (booking.get("email") or "").strip()
+    msg["From"] = config.SMTP_FROM
+    if organiser_email:
+        if organiser_name:
+            msg["Reply-To"] = f'"{organiser_name}" <{organiser_email}>'
+        else:
+            msg["Reply-To"] = organiser_email
+
+    msg["To"]   = ", ".join(recipients)
+    msg["Cc"]   = ", ".join(cc_list)
+    msg.attach(MIMEText(plain, "plain"))
+    msg.attach(MIMEText(html,  "html"))
+
+    envelope_recipients = list(recipients)
+    for cc_addr in cc_list:
+        if cc_addr not in envelope_recipients:
+            envelope_recipients.append(cc_addr)
+
+    try:
+        if config.SMTP_USE_TLS:
+            with smtplib.SMTP(config.SMTP_HOST, config.SMTP_PORT, timeout=15) as server:
+                server.ehlo()
+                server.starttls()
+                server.login(config.SMTP_USER, config.SMTP_PASSWORD)
+                server.sendmail(config.SMTP_USER, envelope_recipients, msg.as_string())
+        else:
+            with smtplib.SMTP_SSL(config.SMTP_HOST, config.SMTP_PORT, timeout=15) as server:
+                server.login(config.SMTP_USER, config.SMTP_PASSWORD)
+                server.sendmail(config.SMTP_USER, envelope_recipients, msg.as_string())
+        logger.info("[Email] Cancellation sent to %s (CC: %s) for booking %s", recipients, cc_list, booking.get("id"))
+        return True
+    except Exception as exc:
+        logger.error("[Email] Failed to send cancellation to %s (CC: %s): %s", recipients, cc_list, exc)
+        return False
