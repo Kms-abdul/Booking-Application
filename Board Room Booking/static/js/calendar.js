@@ -17,7 +17,7 @@ export async function loadAgenda() {
   try {
     const params = new URLSearchParams({ date });
     if (room) params.set('room', room);
-    
+
     const data = await fetchWithAbort(`/api/bookings?${params}`, {}, 'agenda');
     if (data && data.aborted) return;
     if (!data.ok) throw new Error(data.error);
@@ -35,10 +35,10 @@ export async function loadAgenda() {
         const ccEmails = (b.cc_emails || '').toLowerCase();
         const bookerEmail = (b.email || '').toLowerCase();
         const attendees = (b.attendees || '').toLowerCase();
-        return attendeeEmails.includes(emailQuery) || 
-               ccEmails.includes(emailQuery) || 
-               bookerEmail.includes(emailQuery) ||
-               attendees.includes(emailQuery);
+        return attendeeEmails.includes(emailQuery) ||
+          ccEmails.includes(emailQuery) ||
+          bookerEmail.includes(emailQuery) ||
+          attendees.includes(emailQuery);
       });
     }
 

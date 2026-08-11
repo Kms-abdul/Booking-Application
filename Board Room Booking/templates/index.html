@@ -228,7 +228,8 @@
           <select id="agenda-room-filter" class="room-select" onchange="loadAgenda()">
             <option value="">All rooms</option>
           </select>
-          <input id="agenda-email-filter" type="text" class="room-select" placeholder="Search Email ID..." oninput="loadAgenda()" style="width: auto; flex: 1;" />
+          <input id="agenda-email-filter" type="text" class="room-select" placeholder="Search Email ID..."
+            oninput="loadAgenda()" style="width: auto; flex: 1;" />
         </div>
       </div>
 
@@ -257,7 +258,9 @@
             <label for="book-password">PIN *</label>
             <input id="book-password" type="password" placeholder="Enter PIN" required
               onkeydown="if(event.key==='Enter'){ event.preventDefault(); verifyUser(); }" />
-            <a href="#" onclick="forgotPin(); return false;" style="font-size: 0.75rem; color: var(--brass); margin-top: 4px; display: inline-block;">Forgot PIN?</a>
+            <a href="#" onclick="forgotPin(); return false;"
+              style="font-size: 0.75rem; color: #000000;font-weight:600; margin-top: 4px; display: inline-block;">Forgot
+              PIN?</a>
           </div>
         </div>
         <button type="button" id="admin-verify-btn" class="btn-primary" onclick="verifyUser()">
@@ -343,7 +346,8 @@
           <span class="btn-label">Confirm booking</span>
           <span class="btn-spinner hidden"></span>
         </button>
-        <button type="button" id="admin-dashboard-btn" class="btn-ghost hidden" onclick="openAdminPanel()" style="margin-top: 10px; width: 100%;">
+        <button type="button" id="admin-dashboard-btn" class="btn-ghost hidden" onclick="openAdminPanel()"
+          style="margin-top: 10px; width: 100%;">
           Manage Users (Admin)
         </button>
         <div id="form-error" class="form-error hidden" role="alert"></div>
@@ -353,12 +357,14 @@
   </main>
 
   <!-- ===== Admin Panel Modal ===== -->
-  <div id="admin-panel-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="admin-panel-title">
+  <div id="admin-panel-modal" class="modal-overlay hidden" role="dialog" aria-modal="true"
+    aria-labelledby="admin-panel-title">
     <div class="modal-box" style="max-width: 500px;">
       <h2 id="admin-panel-title" class="modal-title">User Management</h2>
       <p class="modal-desc">Create or delete user accounts for booking.</p>
-      
-      <div id="admin-users-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 16px; border: 1px solid var(--border); padding: 8px; border-radius: 8px;">
+
+      <div id="admin-users-list"
+        style="max-height: 200px; overflow-y: auto; margin-bottom: 16px; border: 1px solid var(--border); padding: 8px; border-radius: 8px;">
         Loading users...
       </div>
 
@@ -378,9 +384,9 @@
           <button class="btn-primary" onclick="createUser()" style="width: 100%;">Add User</button>
         </div>
       </div>
-      
+
       <div id="admin-panel-error" class="form-error hidden" role="alert" style="margin-top: 10px;"></div>
-      
+
       <div class="modal-actions" style="margin-top: 20px;">
         <button class="btn-ghost" onclick="closeAdminPanel()">Close</button>
       </div>

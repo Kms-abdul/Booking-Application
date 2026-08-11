@@ -1329,10 +1329,11 @@ body {
 }
 
 .form-kicker {
-  font-size: .68rem;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  color: var(--brass);
+  font-family: 'Arial';
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: black;
 }
 
 .form-group {
