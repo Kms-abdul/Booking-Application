@@ -75,6 +75,12 @@
             <line x1="3" y1="18" x2="21" y2="18"></line>
           </svg>
         </button>
+        <nav class="desktop-nav hidden-mobile">
+          <button id="desktop-tab-about" class="desktop-nav-item" onclick="selectDrawerTab('about')">About</button>
+          <button id="desktop-tab-corridor" class="desktop-nav-item active" onclick="selectDrawerTab('corridor')">Corridor</button>
+          <button id="desktop-tab-agenda" class="desktop-nav-item" onclick="selectDrawerTab('agenda')">Upcoming Meetings</button>
+          <button id="desktop-tab-book" class="desktop-nav-item" onclick="selectDrawerTab('book')">Schedule a Meeting</button>
+        </nav>
         <span id="status-time" class="status-time"></span>
       </div>
 
@@ -166,8 +172,8 @@
     <section id="view-corridor" class="view active" aria-labelledby="tab-corridor">
 
       <div class="corridor-intro">
-        <p class="corridor-eyebrow">Live · updates every minute</p>
-        <h1 class="corridor-title">Walk the corridor</h1>
+        <p class="corridor-eyebrow">Live updates every minute</p>
+        <h1 class="corridor-title">Corridor</h1>
         <p class="corridor-hint">Scroll or swipe through the hallway. Every door glows with what's happening inside.</p>
       </div>
 
@@ -240,23 +246,23 @@
           <p class="view-eyebrow">Front desk</p>
           <h1 class="view-title">Reserve a room</h1>
         </div>
-        <p class="view-note">An admin needs to sign off before a booking goes on the board.</p>
+        <p class="view-note">A user needs to sign off before a booking goes on the board.</p>
       </div> -->
       <div id="admin-login-section" class="booking-form">
-        <p class="form-kicker">Admin sign-off</p>
+        <p class="form-kicker">User Login</p>
         <div class="form-row">
           <div class="form-group">
-            <label for="book-username">Admin username *</label>
-            <input id="book-username" type="text" placeholder="Enter admin username" required />
+            <label for="book-username">Username *</label>
+            <input id="book-username" type="text" placeholder="Enter username" required />
           </div>
           <div class="form-group">
-            <label for="book-password">Admin password *</label>
-            <input id="book-password" type="password" placeholder="Enter admin password" required
+            <label for="book-password">Password *</label>
+            <input id="book-password" type="password" placeholder="Enter password" required
               onkeydown="if(event.key==='Enter'){ event.preventDefault(); verifyAdmin(); }" />
           </div>
         </div>
         <button type="button" id="admin-verify-btn" class="btn-primary" onclick="verifyAdmin()">
-          <span class="btn-label">Verify admin</span>
+          <span class="btn-label">Verify User</span>
           <span class="btn-spinner hidden"></span>
         </button>
       </div>
@@ -354,18 +360,18 @@
   <div id="edit-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
     <div class="modal-box edit-modal-box">
       <h2 id="edit-modal-title" class="modal-title">Edit booking</h2>
-      <p class="modal-desc">Admin credentials required. Only changed fields will be saved.</p>
+      <p class="modal-desc">User credentials required. Only changed fields will be saved.</p>
       <div class="modal-booking-info" id="edit-booking-info"></div>
 
-      <!-- Admin sign-off row -->
+      <!-- User sign-off row -->
       <div class="form-row modal-cred-row">
         <div class="form-group">
-          <label for="edit-username">Admin username *</label>
-          <input id="edit-username" type="text" class="modal-input" placeholder="Admin username" />
+          <label for="edit-username">Username *</label>
+          <input id="edit-username" type="text" class="modal-input" placeholder="Username" />
         </div>
         <div class="form-group">
-          <label for="edit-password">Admin password *</label>
-          <input id="edit-password" type="password" class="modal-input" placeholder="Admin password" />
+          <label for="edit-password">Password *</label>
+          <input id="edit-password" type="password" class="modal-input" placeholder="Password" />
         </div>
       </div>
 
@@ -429,11 +435,11 @@
     aria-labelledby="cancel-modal-title">
     <div class="modal-box">
       <h2 id="cancel-modal-title" class="modal-title">Cancel booking</h2>
-      <p class="modal-desc">Enter admin credentials and the original booker's name to confirm.</p>
+      <p class="modal-desc">Enter user credentials and the original booker's name to confirm.</p>
       <div class="modal-booking-info" id="cancel-booking-info"></div>
       <input id="cancel-name-input" type="text" class="modal-input" placeholder="Original booker's name" />
-      <input id="cancel-username-input" type="text" class="modal-input" placeholder="Admin username" />
-      <input id="cancel-password-input" type="password" class="modal-input" placeholder="Admin password" />
+      <input id="cancel-username-input" type="text" class="modal-input" placeholder="Username" />
+      <input id="cancel-password-input" type="password" class="modal-input" placeholder="Password" />
       <div id="cancel-error" class="form-error hidden" role="alert"></div>
       <div class="modal-actions">
         <button class="btn-ghost" onclick="closeCancel()">Never mind</button>

@@ -2285,3 +2285,9 @@ textarea.modal-input {
     margin-bottom: 24px;
   }
 }
+/* Desktop Nav */
+.desktop-nav { display: none; gap: 12px; align-items: center; }
+.desktop-nav-item { background: transparent; border: none; cursor: pointer; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500; font-family: var(--font-body); color: var(--text-mute); transition: all .2s var(--ease); }
+.desktop-nav-item:hover { color: var(--text); background: rgba(15, 23, 42, 0.04); }
+.desktop-nav-item.active { color: var(--brass); background: var(--brass-dim); font-weight: 600; }
+@media (min-width: 768px) { .hamburger-btn { display: none !important; } .desktop-nav { display: flex; } }

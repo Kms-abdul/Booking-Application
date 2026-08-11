@@ -8,7 +8,7 @@ export function showTab(tab) {
     b.classList.remove('active');
     b.setAttribute('aria-selected', 'false');
   });
-  document.querySelectorAll('.drawer-nav-item').forEach(b => {
+  document.querySelectorAll('.drawer-nav-item, .desktop-nav-item').forEach(b => {
     b.classList.remove('active');
   });
 
@@ -24,6 +24,11 @@ export function showTab(tab) {
   const drawerBtn = document.getElementById(`drawer-tab-${tab}`);
   if (drawerBtn) {
     drawerBtn.classList.add('active');
+  }
+
+  const desktopBtn = document.getElementById(`desktop-tab-${tab}`);
+  if (desktopBtn) {
+    desktopBtn.classList.add('active');
   }
 
   if (tab === 'corridor') loadStatus();

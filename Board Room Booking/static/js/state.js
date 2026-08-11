@@ -2,7 +2,7 @@ export const state = {
   rooms: [],
   statusByRoom: {},
   lastStatusList: [],
-  activeCorridorFloor: 'all',
+  activeCorridorFloor: '3',
   activeAgendaFloor: 'all',
   activeAgendaCategory: 'online',
   activeRoomPanel: null,

@@ -163,10 +163,14 @@ export function renderFloorTabs() {
 
   const corrContainer = document.getElementById('corridor-floor-tabs');
   if (corrContainer) {
-    let html = `<button class="floor-tab active" data-floor="all" onclick="setCorridorFloor('all')">All Floors</button>`;
-    floors.forEach(f => {
-      const suffix = f === 1 ? 'st' : f === 2 ? 'nd' : f === 3 ? 'rd' : 'th';
-      html += `<button class="floor-tab" data-floor="${f}" onclick="setCorridorFloor('${f}')">${f}<sup>${suffix}</sup> Floor</button>`;
+    let html = '';
+    const corridorFloors = [3, 4, 5];
+    corridorFloors.forEach(f => {
+      if (floors.includes(f)) {
+        const suffix = f === 1 ? 'st' : f === 2 ? 'nd' : f === 3 ? 'rd' : 'th';
+        const activeClass = String(state.activeCorridorFloor) === String(f) ? ' active' : '';
+        html += `<button class="floor-tab${activeClass}" data-floor="${f}" onclick="setCorridorFloor('${f}')">${f}<sup>${suffix}</sup> Floor</button>`;
+      }
     });
     corrContainer.innerHTML = html;
   }
