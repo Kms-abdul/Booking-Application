@@ -523,12 +523,12 @@ if __name__ == "__main__":
         "Starting Meeting Management System app at http://%s:%d",
         config.FLASK_HOST, config.FLASK_PORT
     )
-    # threaded=False: all requests are serialised, which eliminates any
-    # remaining Excel concurrency risk.  For a small office app this is fine.
+    # threaded=True: Allows Flask to serve multiple concurrent requests,
+    # relying on filelock and caching to keep Excel safe and fast.
     app.run(
         host    = config.FLASK_HOST,
         port    = config.FLASK_PORT,
         debug   = config.FLASK_DEBUG,
-        threaded= False,       # ← single-threaded; safe for Excel file writes
+        threaded= True,        # ← multi-threaded to prevent latency
         use_reloader = config.FLASK_DEBUG,
     )

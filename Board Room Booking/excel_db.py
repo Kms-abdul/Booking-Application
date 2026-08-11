@@ -94,6 +94,8 @@ def _load_wb():
 def _save_wb(wb):
     """Save workbook and immediately create a daily backup if needed."""
     wb.save(config.EXCEL_PATH)
+    global _cache_mtime
+    _cache_mtime = 0  # Force cache reload on next read to guarantee fresh data
     _maybe_backup()
  
  
@@ -135,6 +137,28 @@ def _rows_as_dicts(ws):
                     row_values.append(cell.value)
             result.append(dict(zip(headers, row_values)))
     return result
+ 
+ 
+_cache_mtime = 0
+_cache_data = {}
+
+def _get_sheet_rows(sheet_name):
+    """Return cached rows for a sheet, reloading if the file was modified."""
+    global _cache_mtime, _cache_data
+    try:
+        current_mtime = os.path.getmtime(config.EXCEL_PATH)
+    except OSError:
+        current_mtime = 0
+    
+    if current_mtime == 0 or current_mtime != _cache_mtime or sheet_name not in _cache_data:
+        wb = _load_wb()
+        _cache_data[BOOKINGS_SHEET] = _rows_as_dicts(wb[BOOKINGS_SHEET]) if BOOKINGS_SHEET in wb.sheetnames else []
+        _cache_data[ROOMS_SHEET] = _rows_as_dicts(wb[ROOMS_SHEET]) if ROOMS_SHEET in wb.sheetnames else []
+        _cache_data[REMINDER_SHEET] = _rows_as_dicts(wb[REMINDER_SHEET]) if REMINDER_SHEET in wb.sheetnames else []
+        _cache_data[USERS_SHEET] = _rows_as_dicts(wb[USERS_SHEET]) if USERS_SHEET in wb.sheetnames else []
+        _cache_mtime = current_mtime
+    
+    return _cache_data.get(sheet_name, [])
  
  
 def _str_to_time(value):
@@ -288,9 +312,7 @@ def get_rooms():
     has a valid room list even on first run.
     """
     with _lock():
-        wb  = _load_wb()
-        ws  = wb[ROOMS_SHEET]
-        rows = _rows_as_dicts(ws)
+        rows = _get_sheet_rows(ROOMS_SHEET)
  
     rooms = [
         {
@@ -322,9 +344,7 @@ def get_bookings(filter_date=None, filter_room=None):
     and/or room name.
     """
     with _lock():
-        wb   = _load_wb()
-        ws   = wb[BOOKINGS_SHEET]
-        rows = _rows_as_dicts(ws)
+        rows = _get_sheet_rows(BOOKINGS_SHEET)
  
     result = []
     for r in rows:
@@ -346,9 +366,7 @@ def get_bookings(filter_date=None, filter_room=None):
 def get_booking_by_id(booking_id):
     """Return a single booking dict by id, or None if not found."""
     with _lock():
-        wb   = _load_wb()
-        ws   = wb[BOOKINGS_SHEET]
-        rows = _rows_as_dicts(ws)
+        rows = _get_sheet_rows(BOOKINGS_SHEET)
  
     for r in rows:
         if str(r.get("id")) == str(booking_id):
@@ -728,9 +746,7 @@ def cancel_booking(booking_id):
 def get_reminded_ids():
     """Return a set of booking_ids that already had a reminder sent."""
     with _lock():
-        wb   = _load_wb()
-        ws   = wb[REMINDER_SHEET]
-        rows = _rows_as_dicts(ws)
+        rows = _get_sheet_rows(REMINDER_SHEET)
     return {str(r["booking_id"]) for r in rows if r.get("booking_id")}
  
  
@@ -791,9 +807,7 @@ def get_today_status():
 def get_users():
     """Return list of all users."""
     with _lock():
-        wb  = _load_wb()
-        ws  = wb[USERS_SHEET]
-        rows = _rows_as_dicts(ws)
+        rows = _get_sheet_rows(USERS_SHEET)
     return rows
 
 def verify_user(username, pin):
