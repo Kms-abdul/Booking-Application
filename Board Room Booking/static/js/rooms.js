@@ -177,11 +177,7 @@ export function renderFloorTabs() {
 
   const agendaContainer = document.getElementById('agenda-floor-tabs');
   if (agendaContainer) {
-    let html = `<button class="floor-tab active" data-floor="all" onclick="setAgendaFloor('all')">All</button>`;
-    floors.forEach(f => {
-      html += `<button class="floor-tab" data-floor="${f}" onclick="setAgendaFloor('${f}')">${f}F</button>`;
-    });
-    agendaContainer.innerHTML = html;
+    agendaContainer.innerHTML = ''; // Removed floor tabs based on user request
   }
 }
 

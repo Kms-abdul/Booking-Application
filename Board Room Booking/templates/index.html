@@ -77,9 +77,12 @@
         </button>
         <nav class="desktop-nav hidden-mobile">
           <button id="desktop-tab-about" class="desktop-nav-item" onclick="selectDrawerTab('about')">About</button>
-          <button id="desktop-tab-corridor" class="desktop-nav-item active" onclick="selectDrawerTab('corridor')">Corridor</button>
-          <button id="desktop-tab-agenda" class="desktop-nav-item" onclick="selectDrawerTab('agenda')">Upcoming Meetings</button>
-          <button id="desktop-tab-book" class="desktop-nav-item" onclick="selectDrawerTab('book')">Schedule a Meeting</button>
+          <button id="desktop-tab-corridor" class="desktop-nav-item active"
+            onclick="selectDrawerTab('corridor')">Corridor</button>
+          <button id="desktop-tab-agenda" class="desktop-nav-item" onclick="selectDrawerTab('agenda')">Upcoming
+            Meetings</button>
+          <button id="desktop-tab-book" class="desktop-nav-item" onclick="selectDrawerTab('book')">Schedule a
+            Meeting</button>
         </nav>
         <span id="status-time" class="status-time"></span>
       </div>
@@ -125,7 +128,6 @@
       </div>
     </div>
   </div>
-
   <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
 
   <!-- Notification Popup -->
@@ -140,7 +142,6 @@
   </div>
 
   <main class="main-content">
-
     <!-- ── ABOUT VIEW ── -->
     <section id="view-about" class="view" aria-labelledby="tab-about">
       <div class="view-header">
@@ -223,10 +224,7 @@
           <input id="agenda-date" type="date" class="date-input" onchange="loadAgenda()" />
         </div>
         <div class="agenda-filter-row">
-          <!-- Floor quick-filter -->
-          <div class="floor-tabs floor-tabs--sm" id="agenda-floor-tabs" role="tablist">
-            <!-- Dynamically populated by JS -->
-          </div>
+          <!-- Floor quick-filter removed per user request -->
           <!-- Room drop-down (populated by JS with optgroups) -->
           <select id="agenda-room-filter" class="room-select" onchange="loadAgenda()">
             <option value="">All rooms</option>
@@ -270,6 +268,22 @@
       <form id="booking-form" class="booking-form hidden" onsubmit="submitBooking(event)" novalidate>
         <p class="form-kicker">Booking details</p>
         <div class="form-group">
+          <label for="book-date">Date *</label>
+          <input id="book-date" type="date" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="book-start">Start time *</label>
+            <input id="book-start" type="time" required />
+          </div>
+          <div class="form-group">
+            <label for="book-end">End time *</label>
+            <input id="book-end" type="time" required />
+          </div>
+        </div>
+
+        <div class="form-group">
           <label for="book-room">Venue*</label> <!-- Room name as replacing Venue-->
           <select id="book-room" required>
             <option value="">Select a room…</option>
@@ -287,6 +301,12 @@
         <div class="form-group">
           <label for="book-title">Agenda*</label> <!-- Meeting Title as replacing Agenda Name -->
           <input id="book-title" type="text" maxlength="120" placeholder="e.g. Executive Strategy Meeting" required />
+        </div>
+
+        <div class="form-group">
+          <label for="book-description">Meeting Purpose / Description</label>
+          <textarea id="book-description"
+            placeholder="e.g. Discuss quarterly sales targets and market expansion plans"></textarea>
         </div>
 
         <div class="form-group">
@@ -308,33 +328,14 @@
 
         <div class="form-group">
           <label for="book-attendees-emails">Attendees' Emails</label>
-          <textarea id="book-attendees-emails" placeholder="e.g. john@mseducation.academy, sarah@mseducation.academy"></textarea>
+          <textarea id="book-attendees-emails"
+            placeholder="e.g. john@mseducation.academy, sarah@mseducation.academy"></textarea>
         </div>
 
         <div class="form-group">
           <label for="book-cc-emails">CC Emails</label>
-          <textarea id="book-cc-emails" placeholder="e.g. manager@mseducation.academy, boss@mseducation.academy"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="book-description">Meeting Purpose / Description</label>
-          <textarea id="book-description" placeholder="e.g. Discuss quarterly sales targets and market expansion plans"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="book-date">Date *</label>
-          <input id="book-date" type="date" required />
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="book-start">Start time *</label>
-            <input id="book-start" type="time" required />
-          </div>
-          <div class="form-group">
-            <label for="book-end">End time *</label>
-            <input id="book-end" type="time" required />
-          </div>
+          <textarea id="book-cc-emails"
+            placeholder="e.g. manager@mseducation.academy, boss@mseducation.academy"></textarea>
         </div>
 
         <button id="book-submit" type="submit" class="btn-primary">
