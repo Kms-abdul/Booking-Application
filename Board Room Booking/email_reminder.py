@@ -83,12 +83,15 @@ def _get_cc_recipients(booking: dict) -> list[str]:
 # Internal SMTP helper — shared by both email types
 # ---------------------------------------------------------------------------
 
-def _send_via_smtp(msg: MIMEMultipart) -> bool:
+def _send_via_smtp(msg: MIMEMultipart, envelope_recipients=None) -> bool:
     """
     Send an already-composed MIMEMultipart message via SMTP.
     Supports STARTTLS (Gmail, Outlook port 587) and SSL (port 465).
     Returns True on success, False on failure.
     """
+    if not envelope_recipients:
+        envelope_recipients = [msg["To"]]
+        
     try:
         if config.SMTP_USE_TLS:
             # STARTTLS — works for Gmail (smtp.gmail.com:587)
@@ -101,7 +104,7 @@ def _send_via_smtp(msg: MIMEMultipart) -> bool:
                 server.login(config.SMTP_USER, config.SMTP_PASSWORD)
                 server.sendmail(
                     config.SMTP_FROM,
-                    config.REMINDER_TO,
+                    envelope_recipients,
                     msg.as_string()
                 )
         else:
@@ -111,7 +114,7 @@ def _send_via_smtp(msg: MIMEMultipart) -> bool:
                 server.login(config.SMTP_USER, config.SMTP_PASSWORD)
                 server.sendmail(
                     config.SMTP_FROM,
-                    config.REMINDER_TO,
+                    envelope_recipients,
                     msg.as_string()
                 )
         return True

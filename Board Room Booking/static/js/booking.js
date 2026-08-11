@@ -21,7 +21,7 @@ export function populateBookForm() {
   });
 }
 
-export async function verifyAdmin() {
+export async function verifyUser() {
   const username = document.getElementById('book-username').value.trim();
   const password = document.getElementById('book-password').value;
   const errorEl = document.getElementById('form-error');
@@ -32,7 +32,7 @@ export async function verifyAdmin() {
   if (errorEl) errorEl.classList.add('hidden');
 
   if (!username || !password) {
-    showFieldError(errorEl, 'Please enter admin username and password.');
+    showFieldError(errorEl, 'Please enter username and PIN.');
     return;
   }
 
@@ -41,7 +41,7 @@ export async function verifyAdmin() {
   if (spinner) spinner.classList.remove('hidden');
 
   try {
-    const res = await fetch('/api/verify-admin', {
+    const res = await fetch('/api/verify-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
@@ -55,13 +55,158 @@ export async function verifyAdmin() {
 
     document.getElementById('booking-form').classList.remove('hidden');
     document.getElementById('admin-login-section').classList.add('hidden');
-    showToast('✅ Admin verified. You can now submit the booking.', 'success');
+    
+    // Store role and credentials on the form dataset so we can use them
+    const form = document.getElementById('booking-form');
+    form.dataset.role = data.role;
+    form.dataset.username = username;
+    form.dataset.password = password;
+
+    if (data.role === 'admin') {
+      document.getElementById('admin-dashboard-btn').classList.remove('hidden');
+    } else {
+      document.getElementById('admin-dashboard-btn').classList.add('hidden');
+    }
+
+    showToast('✅ User verified. You can now submit the booking.', 'success');
   } catch (err) {
-    showFieldError(errorEl, 'Unable to verify admin — please try again.');
+    showFieldError(errorEl, 'Unable to verify user — please try again.');
   } finally {
     if (btn) btn.disabled = false;
     if (label) label.classList.remove('hidden');
     if (spinner) spinner.classList.add('hidden');
+  }
+}
+
+export async function forgotPin() {
+  const username = document.getElementById('book-username').value.trim();
+  if (!username) {
+    showToast('Please enter your username first.', 'error');
+    return;
+  }
+  
+  showToast('Sending PIN...', 'info');
+  try {
+    const res = await fetch('/api/forgot-pin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('PIN has been sent to your email.', 'success');
+    } else {
+      showToast(data.error || 'Failed to send PIN.', 'error');
+    }
+  } catch (err) {
+    showToast('Network error while requesting PIN.', 'error');
+  }
+}
+
+export function openAdminPanel() {
+  document.getElementById('admin-panel-modal').classList.remove('hidden');
+  loadAdminUsers();
+}
+
+export function closeAdminPanel() {
+  document.getElementById('admin-panel-modal').classList.add('hidden');
+  document.getElementById('admin-panel-error').classList.add('hidden');
+}
+
+export async function loadAdminUsers() {
+  const list = document.getElementById('admin-users-list');
+  list.innerHTML = 'Loading...';
+  
+  const form = document.getElementById('booking-form');
+  const username = form.dataset.username;
+  const password = form.dataset.password;
+  
+  try {
+    const res = await fetch(`/api/users?username=${encodeURIComponent(username)}&pin=${encodeURIComponent(password)}`);
+    const data = await res.json();
+    
+    if (data.ok) {
+      if (data.users.length === 0) {
+        list.innerHTML = 'No users found.';
+        return;
+      }
+      list.innerHTML = data.users.map(u => `
+        <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border);">
+          <span><b>${u.username}</b> (${u.email || 'No email'}) - <i>${u.role}</i></span>
+          ${u.username !== username ? `<button onclick="deleteUser('${u.username}')" style="color: red; background: none; border: none; cursor: pointer;">Delete</button>` : ''}
+        </div>
+      `).join('');
+    } else {
+      list.innerHTML = `<span style="color:red">${data.error}</span>`;
+    }
+  } catch (err) {
+    list.innerHTML = `<span style="color:red">Error loading users</span>`;
+  }
+}
+
+export async function createUser() {
+  const errorEl = document.getElementById('admin-panel-error');
+  errorEl.classList.add('hidden');
+  
+  const form = document.getElementById('booking-form');
+  const admin_username = form.dataset.username;
+  const admin_password = form.dataset.password;
+  
+  const username = document.getElementById('new-user-username').value.trim();
+  const email = document.getElementById('new-user-email').value.trim();
+  const pin = document.getElementById('new-user-pin').value.trim();
+  
+  if (!username || !pin) {
+    errorEl.textContent = 'Username and PIN are required.';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  
+  try {
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_username, admin_password, username, email, pin, role: 'user' }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      document.getElementById('new-user-username').value = '';
+      document.getElementById('new-user-email').value = '';
+      document.getElementById('new-user-pin').value = '';
+      showToast('User added successfully', 'success');
+      loadAdminUsers();
+    } else {
+      errorEl.textContent = data.error;
+      errorEl.classList.remove('hidden');
+    }
+  } catch (err) {
+    errorEl.textContent = 'Network error.';
+    errorEl.classList.remove('hidden');
+  }
+}
+
+export async function deleteUser(usernameToDelete) {
+  if (!confirm(`Are you sure you want to delete ${usernameToDelete}?`)) return;
+  
+  const form = document.getElementById('booking-form');
+  const admin_username = form.dataset.username;
+  const admin_password = form.dataset.password;
+  
+  try {
+    const res = await fetch(`/api/users/${encodeURIComponent(usernameToDelete)}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_username, admin_password }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('User deleted', 'success');
+      loadAdminUsers();
+    } else {
+      showToast(data.error, 'error');
+    }
+  } catch (err) {
+    showToast('Network error.', 'error');
   }
 }
 

@@ -149,15 +149,16 @@ def api_get_booking(booking_id):
 # API — Admin Validation
 # ---------------------------------------------------------------------------
 
-@app.route("/api/verify-admin", methods=["POST"])
-def api_verify_admin():
-    """Verify admin credentials before opening booking form."""
+@app.route("/api/verify-user", methods=["POST"])
+def api_verify_user():
+    """Verify user/admin credentials before opening booking form."""
     data = request.get_json(silent=True) or {}
     username = data.get("username")
-    password = data.get("password")
-    if username == config.ADMIN_USERNAME and password == config.ADMIN_PASSWORD:
-        return jsonify({"ok": True})
-    return jsonify({"ok": False, "error": "Invalid admin username or password"}), 401
+    pin = data.get("password")  # The frontend sends "password"
+    user = excel_db.verify_user(username, pin)
+    if user:
+        return jsonify({"ok": True, "role": user.get("role", "user")})
+    return jsonify({"ok": False, "error": "Invalid username or PIN"}), 401
 
 
 @app.route("/api/bookings", methods=["POST"])
@@ -173,8 +174,9 @@ def api_create_booking():
     """
     data = request.get_json(silent=True) or {}
 
-    if data.get("username") != config.ADMIN_USERNAME or data.get("password") != config.ADMIN_PASSWORD:
-        return jsonify({"ok": False, "error": "Invalid username or password"}), 401
+    user = excel_db.verify_user(data.get("username"), data.get("password"))
+    if not user:
+        return jsonify({"ok": False, "error": "Invalid username or PIN"}), 401
 
     required = ["room", "date", "start_time", "end_time", "title", "booked_by"]
     missing  = [f for f in required if not data.get(f)]
@@ -256,8 +258,9 @@ def api_edit_booking(booking_id):
     """
     data = request.get_json(silent=True) or {}
 
-    if data.get("username") != config.ADMIN_USERNAME or data.get("password") != config.ADMIN_PASSWORD:
-        return jsonify({"ok": False, "error": "Invalid admin credentials"}), 401
+    user = excel_db.verify_user(data.get("username"), data.get("password"))
+    if not user:
+        return jsonify({"ok": False, "error": "Invalid username or PIN"}), 401
 
     # Collect only the editable fields that were actually provided
     updates = {}
@@ -314,8 +317,9 @@ def api_cancel_booking(booking_id):
     data         = request.get_json(silent=True) or {}
     cancelled_by = (data.get("cancelled_by") or "").strip()
 
-    if data.get("username") != config.ADMIN_USERNAME or data.get("password") != config.ADMIN_PASSWORD:
-        return jsonify({"ok": False, "error": "Invalid username or password"}), 401
+    user = excel_db.verify_user(data.get("username"), data.get("password"))
+    if not user:
+        return jsonify({"ok": False, "error": "Invalid username or PIN"}), 401
 
     try:
         # Fetch the booking first to check name
@@ -346,6 +350,86 @@ def api_cancel_booking(booking_id):
     except Exception as exc:
         logger.exception("DELETE /api/bookings/%s failed", booking_id)
         return jsonify({"ok": False, "error": str(exc)}), 500
+
+# ---------------------------------------------------------------------------
+# API — User Management & Forgot PIN
+# ---------------------------------------------------------------------------
+
+def _is_admin(username, pin):
+    u = excel_db.verify_user(username, pin)
+    return u is not None and u.get("role") == "admin"
+
+@app.route("/api/users", methods=["GET"])
+def api_get_users():
+    admin_user = request.args.get("username")
+    admin_pin = request.args.get("pin")
+    if not _is_admin(admin_user, admin_pin):
+        return jsonify({"ok": False, "error": "Admin access required"}), 403
+    users = excel_db.get_users()
+    # Mask PINs except for the returned data
+    clean_users = [{"username": u.get("username"), "email": u.get("email"), "role": u.get("role")} for u in users]
+    return jsonify({"ok": True, "users": clean_users})
+
+@app.route("/api/users", methods=["POST"])
+def api_create_user():
+    data = request.get_json(silent=True) or {}
+    if not _is_admin(data.get("admin_username"), data.get("admin_password")):
+        return jsonify({"ok": False, "error": "Admin access required"}), 403
+    
+    username = (data.get("username") or "").strip()
+    email = (data.get("email") or "").strip()
+    pin = (data.get("pin") or "").strip()
+    role = (data.get("role") or "user").strip()
+
+    if not username or not pin:
+        return jsonify({"ok": False, "error": "Username and PIN are required"}), 400
+
+    success, err = excel_db.add_user(username, email, pin, role)
+    if not success:
+        return jsonify({"ok": False, "error": err}), 400
+    return jsonify({"ok": True}), 201
+
+@app.route("/api/users/<username>", methods=["DELETE"])
+def api_delete_user(username):
+    data = request.get_json(silent=True) or {}
+    if not _is_admin(data.get("admin_username"), data.get("admin_password")):
+        return jsonify({"ok": False, "error": "Admin access required"}), 403
+    
+    if excel_db.delete_user(username):
+        return jsonify({"ok": True})
+    return jsonify({"ok": False, "error": "User not found"}), 404
+
+@app.route("/api/forgot-pin", methods=["POST"])
+def api_forgot_pin():
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or "").strip()
+    user = excel_db.get_user_by_username(username)
+    if not user:
+        return jsonify({"ok": False, "error": "User not found"}), 404
+    
+    email = user.get("email")
+    if not email or "@" not in email:
+        return jsonify({"ok": False, "error": "No valid email address on file for this user"}), 400
+    
+    # Send email with PIN
+    import email_reminder
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "Your MMS Board Room Booking PIN"
+    msg["From"] = config.SMTP_FROM
+    msg["To"] = email
+    
+    plain = f"Hello {username},\n\nYour PIN is: {user.get('pin')}\n\nPlease keep this secure."
+    html = f"<p>Hello <b>{username}</b>,</p><p>Your PIN is: <b>{user.get('pin')}</b></p><p>Please keep this secure.</p>"
+    msg.attach(MIMEText(plain, "plain"))
+    msg.attach(MIMEText(html, "html"))
+    
+    sent = email_reminder._send_via_smtp(msg)
+    if sent:
+        return jsonify({"ok": True})
+    return jsonify({"ok": False, "error": "Failed to send email. Please contact administrator."}), 500
 
 # ---------------------------------------------------------------------------
 # Reminder Scheduler Job

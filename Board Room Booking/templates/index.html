@@ -29,7 +29,7 @@
     https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap%22
     rel="stylesheet" />
   </noscript>
-  <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="stylesheet" href="/static/css/style.css?v=2" />
 </head>
 
 <body>
@@ -228,6 +228,7 @@
           <select id="agenda-room-filter" class="room-select" onchange="loadAgenda()">
             <option value="">All rooms</option>
           </select>
+          <input id="agenda-email-filter" type="text" class="room-select" placeholder="Search Email ID..." oninput="loadAgenda()" style="width: auto; flex: 1;" />
         </div>
       </div>
 
@@ -253,12 +254,13 @@
             <input id="book-username" type="text" placeholder="Enter username" required />
           </div>
           <div class="form-group">
-            <label for="book-password">Password *</label>
-            <input id="book-password" type="password" placeholder="Enter password" required
-              onkeydown="if(event.key==='Enter'){ event.preventDefault(); verifyAdmin(); }" />
+            <label for="book-password">PIN *</label>
+            <input id="book-password" type="password" placeholder="Enter PIN" required
+              onkeydown="if(event.key==='Enter'){ event.preventDefault(); verifyUser(); }" />
+            <a href="#" onclick="forgotPin(); return false;" style="font-size: 0.75rem; color: var(--brass); margin-top: 4px; display: inline-block;">Forgot PIN?</a>
           </div>
         </div>
-        <button type="button" id="admin-verify-btn" class="btn-primary" onclick="verifyAdmin()">
+        <button type="button" id="admin-verify-btn" class="btn-primary" onclick="verifyUser()">
           <span class="btn-label">Verify User</span>
           <span class="btn-spinner hidden"></span>
         </button>
@@ -341,11 +343,49 @@
           <span class="btn-label">Confirm booking</span>
           <span class="btn-spinner hidden"></span>
         </button>
+        <button type="button" id="admin-dashboard-btn" class="btn-ghost hidden" onclick="openAdminPanel()" style="margin-top: 10px; width: 100%;">
+          Manage Users (Admin)
+        </button>
         <div id="form-error" class="form-error hidden" role="alert"></div>
       </form>
     </section>
 
   </main>
+
+  <!-- ===== Admin Panel Modal ===== -->
+  <div id="admin-panel-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="admin-panel-title">
+    <div class="modal-box" style="max-width: 500px;">
+      <h2 id="admin-panel-title" class="modal-title">User Management</h2>
+      <p class="modal-desc">Create or delete user accounts for booking.</p>
+      
+      <div id="admin-users-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 16px; border: 1px solid var(--border); padding: 8px; border-radius: 8px;">
+        Loading users...
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <input id="new-user-username" type="text" class="modal-input" placeholder="Username" />
+        </div>
+        <div class="form-group">
+          <input id="new-user-email" type="email" class="modal-input" placeholder="Email" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <input id="new-user-pin" type="text" class="modal-input" placeholder="PIN" />
+        </div>
+        <div class="form-group">
+          <button class="btn-primary" onclick="createUser()" style="width: 100%;">Add User</button>
+        </div>
+      </div>
+      
+      <div id="admin-panel-error" class="form-error hidden" role="alert" style="margin-top: 10px;"></div>
+      
+      <div class="modal-actions" style="margin-top: 20px;">
+        <button class="btn-ghost" onclick="closeAdminPanel()">Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ===== Room detail panel (slides in when a door is opened) ===== -->
   <div id="room-panel" class="room-panel hidden">
@@ -370,8 +410,8 @@
           <input id="edit-username" type="text" class="modal-input" placeholder="Username" />
         </div>
         <div class="form-group">
-          <label for="edit-password">Password *</label>
-          <input id="edit-password" type="password" class="modal-input" placeholder="Password" />
+          <label for="edit-password">PIN *</label>
+          <input id="edit-password" type="password" class="modal-input" placeholder="PIN" />
         </div>
       </div>
 
@@ -439,7 +479,7 @@
       <div class="modal-booking-info" id="cancel-booking-info"></div>
       <input id="cancel-name-input" type="text" class="modal-input" placeholder="Original booker's name" />
       <input id="cancel-username-input" type="text" class="modal-input" placeholder="Username" />
-      <input id="cancel-password-input" type="password" class="modal-input" placeholder="Password" />
+      <input id="cancel-password-input" type="password" class="modal-input" placeholder="PIN" />
       <div id="cancel-error" class="form-error hidden" role="alert"></div>
       <div class="modal-actions">
         <button class="btn-ghost" onclick="closeCancel()">Never mind</button>
@@ -448,7 +488,7 @@
     </div>
   </div>
 
-  <script type="module" src="/static/js/app.js"></script>
+  <script type="module" src="/static/js/app.js?v=2"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

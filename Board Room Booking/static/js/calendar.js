@@ -28,6 +28,20 @@ export async function loadAgenda() {
       bookings = bookings.filter(b => floorRooms.has(b.room));
     }
 
+    const emailQuery = (document.getElementById('agenda-email-filter')?.value || '').trim().toLowerCase();
+    if (emailQuery) {
+      bookings = bookings.filter(b => {
+        const attendeeEmails = (b.attendee_emails || '').toLowerCase();
+        const ccEmails = (b.cc_emails || '').toLowerCase();
+        const bookerEmail = (b.email || '').toLowerCase();
+        const attendees = (b.attendees || '').toLowerCase();
+        return attendeeEmails.includes(emailQuery) || 
+               ccEmails.includes(emailQuery) || 
+               bookerEmail.includes(emailQuery) ||
+               attendees.includes(emailQuery);
+      });
+    }
+
     bookings = bookings.filter(b => b.meeting_mode === state.activeAgendaCategory);
 
     renderAgenda(bookings, date);

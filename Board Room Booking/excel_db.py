@@ -40,11 +40,13 @@ def _lock():
 BOOKINGS_SHEET    = "Bookings"
 ROOMS_SHEET       = "Rooms"
 REMINDER_SHEET    = "ReminderLog"
+USERS_SHEET       = "Users"
  
 BOOKINGS_HEADERS  = ["id", "room", "date", "start_time", "end_time",
                       "title", "booked_by", "email", "attendees", "attendee_emails", "meeting_mode", "meeting_link", "cc_emails", "description", "created_at", "status"]
 ROOMS_HEADERS     = ["room_name", "color", "capacity", "floor", "teams_link"]
 REMINDER_HEADERS  = ["booking_id", "reminder_sent_at"]
+USERS_HEADERS     = ["username", "email", "pin", "role", "created_at"]
  
  
 def _ensure_data_dirs():
@@ -74,6 +76,12 @@ def _init_workbook():
     # --- ReminderLog sheet ---
     ws_rl = wb.create_sheet(REMINDER_SHEET)
     ws_rl.append(REMINDER_HEADERS)
+    
+    # --- Users sheet ---
+    ws_u = wb.create_sheet(USERS_SHEET)
+    ws_u.append(USERS_HEADERS)
+    # Add a default admin
+    ws_u.append([config.ADMIN_USERNAME, "admin@example.com", config.ADMIN_PASSWORD, "admin", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
  
     wb.save(config.EXCEL_PATH)
  
@@ -262,6 +270,13 @@ def ensure_db():
                 else:
                     ws_r.cell(row=1, column=len(r_headers) + 1, value="teams_link")
                 _save_wb(wb)
+                
+            # Ensure Users sheet exists
+            if USERS_SHEET not in wb.sheetnames:
+                ws_u = wb.create_sheet(USERS_SHEET)
+                ws_u.append(USERS_HEADERS)
+                ws_u.append([config.ADMIN_USERNAME, "admin@example.com", config.ADMIN_PASSWORD, "admin", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
+                _save_wb(wb)
  
  
 # --- Rooms ------------------------------------------------------------------
@@ -384,7 +399,7 @@ def _parse_emails(emails_str):
     return emails
 
 
-def add_booking(room, booking_date, start_time_str, end_time_str,
+def add_booking(room, booking_date, start_time_str, end_time_str, 
                 title, booked_by, email="", attendees="", attendee_emails="",
                 meeting_mode="offline", meeting_link="", cc_emails="", description=""):
     """
@@ -770,3 +785,66 @@ def get_today_status():
         })
  
     return status_list
+
+# --- Users ------------------------------------------------------------------
+ 
+def get_users():
+    """Return list of all users."""
+    with _lock():
+        wb  = _load_wb()
+        ws  = wb[USERS_SHEET]
+        rows = _rows_as_dicts(ws)
+    return rows
+
+def verify_user(username, pin):
+    """Return user dict if credentials match, else None."""
+    users = get_users()
+    for u in users:
+        if str(u.get("username")).lower() == str(username).lower() and str(u.get("pin")) == str(pin):
+            return u
+    # Fallback to config admin
+    if username == config.ADMIN_USERNAME and pin == config.ADMIN_PASSWORD:
+        return {"username": config.ADMIN_USERNAME, "role": "admin"}
+    return None
+
+def add_user(username, email, pin, role="user"):
+    with _lock():
+        wb = _load_wb()
+        ws = wb[USERS_SHEET]
+        # Check if user exists
+        for row in ws.iter_rows(min_row=2):
+            if str(row[0].value).lower() == str(username).lower():
+                return False, "Username already exists"
+        
+        ws.append([username, email, pin, role, datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
+        _save_wb(wb)
+    return True, None
+
+def reset_pin(username, new_pin):
+    with _lock():
+        wb = _load_wb()
+        ws = wb[USERS_SHEET]
+        for row in ws.iter_rows(min_row=2):
+            if str(row[0].value).lower() == str(username).lower():
+                row[2].value = new_pin
+                _save_wb(wb)
+                return True
+    return False
+
+def get_user_by_username(username):
+    users = get_users()
+    for u in users:
+        if str(u.get("username")).lower() == str(username).lower():
+            return u
+    return None
+
+def delete_user(username):
+    with _lock():
+        wb = _load_wb()
+        ws = wb[USERS_SHEET]
+        for i, row in enumerate(ws.iter_rows(min_row=2)):
+            if str(row[0].value).lower() == str(username).lower():
+                ws.delete_rows(i + 2)
+                _save_wb(wb)
+                return True
+    return False

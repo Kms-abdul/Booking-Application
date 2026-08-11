@@ -20,9 +20,13 @@ window.loadAgenda = calendar.loadAgenda;
 window.setAgendaCategory = calendar.setAgendaCategory;
 window.setAgendaFloor = calendar.setAgendaFloor;
 
-window.verifyAdmin = booking.verifyAdmin;
+window.verifyUser = booking.verifyUser;
 window.submitBooking = booking.submitBooking;
-
+window.forgotPin = booking.forgotPin;
+window.openAdminPanel = booking.openAdminPanel;
+window.closeAdminPanel = booking.closeAdminPanel;
+window.createUser = booking.createUser;
+window.deleteUser = booking.deleteUser;
 window.openEdit = modal.openEdit;
 window.closeEdit = modal.closeEdit;
 window.confirmEdit = modal.confirmEdit;

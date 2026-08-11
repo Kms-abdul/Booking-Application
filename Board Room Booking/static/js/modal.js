@@ -70,7 +70,7 @@ export async function confirmEdit() {
   errEl.classList.add('hidden');
 
   if (!uname || !pwd) {
-    errEl.textContent = 'Please enter admin username and password.';
+    errEl.textContent = 'Please enter username and PIN.';
     errEl.classList.remove('hidden');
     return;
   }
@@ -155,7 +155,7 @@ export async function confirmCancel() {
   const btn = document.getElementById('cancel-confirm-btn');
 
   if (!name || !uname || !pwd) {
-    errEl.textContent = 'Please enter name, username, and password.';
+    errEl.textContent = 'Please enter name, username, and PIN.';
     errEl.classList.remove('hidden');
     return;
   }
