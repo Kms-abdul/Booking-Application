@@ -144,19 +144,21 @@ body {
 }
 
 .entry-eyebrow {
-  font-size: .72rem;
-  letter-spacing: .3em;
-  text-transform: uppercase;
-  color: var(--brass);
+  font-size: 22px;
+  font-weight: 600;
+  font-family: "Arial", sans-serif;
+  color: black;
   display: block;
   margin-bottom: 14px;
+  white-space: nowrap;
+  /* Prevents text from wrapping to a new line */
 }
 
 .entry-title {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(2.6rem, 8vw, 4rem);
-  letter-spacing: -.01em;
+  font-family: "Arial";
+  font-weight: 400;
+  font-size: 25px;
+  letter-spacing: .0.5em;
   margin-bottom: 14px;
 }
 
@@ -337,10 +339,11 @@ body {
 }
 
 .view-eyebrow {
-  font-size: .7rem;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  color: var(--brass);
+  font-size: 14px;
+  letter-spacing: .1em;
+  font-family: "Arial";
+  text-align: center;
+  color: black;
   margin-bottom: 6px;
 }
 
@@ -367,10 +370,10 @@ body {
 }
 
 .corridor-eyebrow {
-  font-size: .7rem;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  color: var(--brass);
+  font-size: 16px;
+  font-family: 'Arial';
+  letter-spacing: .1em;
+  color: black;
   margin-bottom: 10px;
 }
 
@@ -2285,9 +2288,44 @@ textarea.modal-input {
     margin-bottom: 24px;
   }
 }
+
 /* Desktop Nav */
-.desktop-nav { display: none; gap: 12px; align-items: center; }
-.desktop-nav-item { background: transparent; border: none; cursor: pointer; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500; font-family: var(--font-body); color: var(--text-mute); transition: all .2s var(--ease); }
-.desktop-nav-item:hover { color: var(--text); background: rgba(15, 23, 42, 0.04); }
-.desktop-nav-item.active { color: var(--brass); background: var(--brass-dim); font-weight: 600; }
-@media (min-width: 768px) { .hamburger-btn { display: none !important; } .desktop-nav { display: flex; } }
+.desktop-nav {
+  display: none;
+  gap: 12px;
+  align-items: center;
+}
+
+.desktop-nav-item {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: var(--font-body);
+  color: var(--text-mute);
+  transition: all .2s var(--ease);
+}
+
+.desktop-nav-item:hover {
+  color: var(--text);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.desktop-nav-item.active {
+  color: var(--brass);
+  background: var(--brass-dim);
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .hamburger-btn {
+    display: none !important;
+  }
+
+  .desktop-nav {
+    display: flex;
+  }
+}
