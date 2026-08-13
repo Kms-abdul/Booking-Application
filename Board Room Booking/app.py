@@ -266,6 +266,24 @@ def api_edit_booking(booking_id):
     if not user:
         return jsonify({"ok": False, "error": "Invalid username or PIN"}), 401
 
+    try:
+        existing = excel_db.get_booking_by_id(booking_id)
+        if existing is None:
+            return jsonify({"ok": False, "error": "Booking not found."}), 404
+
+        is_admin = user.get("role") == "admin"
+        user_email = user.get("email", "").strip().lower()
+        booking_email = existing.get("email", "").strip().lower()
+
+        if not is_admin and (not user_email or user_email != booking_email):
+            return jsonify({
+                "ok": False,
+                "error": "You can only edit meetings that you booked (email mismatch)."
+            }), 403
+    except Exception as exc:
+        logger.exception("GET /api/bookings/%s failed", booking_id)
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
     # Collect only the editable fields that were actually provided
     updates = {}
     for field in ("room", "start_time", "end_time", "attendees", "attendee_emails", "meeting_mode", "cc_emails", "description"):
