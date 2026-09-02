@@ -56,7 +56,7 @@ LOCK_PATH   = os.path.join(DATA_DIR, "bookings.lock")
 
 # --- Reminder Settings -------------------------------------------------------
 # How many minutes BEFORE a meeting the reminder email is sent.
-REMINDER_MINUTES_BEFORE = 30
+REMINDER_MINUTES_BEFORE = 15
 
 # How often (in seconds) the background worker checks for upcoming reminders.
 # 300 = check every 5 minutes (clean logs)
