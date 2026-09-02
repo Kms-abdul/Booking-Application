@@ -155,8 +155,21 @@ function renderAgenda(bookings, date) {
     }
 
     let descriptionHTML = '';
+    let venueHTML = '';
     if (b.description) {
-      descriptionHTML = `<div class="agenda-description" style="margin-top: 6px; font-size: 0.82rem; color: var(--text-dim); line-height: 1.4;">📝 <b>Purpose:</b> ${esc(b.description)}</div>`;
+      let desc = b.description;
+      let venue = '';
+      if (desc.startsWith('Venue: ')) {
+        const parts = desc.split('\n\n');
+        venue = parts[0].substring(7).trim();
+        desc = parts.slice(1).join('\n\n').trim();
+      }
+      if (venue) {
+        venueHTML = `<div class="agenda-venue" style="margin-top: 6px; font-size: 0.82rem; color: var(--text-dim); line-height: 1.4;">📍 <b>Venue:</b> ${esc(venue)}</div>`;
+      }
+      if (desc) {
+        descriptionHTML = `<div class="agenda-description" style="margin-top: 6px; font-size: 0.82rem; color: var(--text-dim); line-height: 1.4;">📝 <b>Purpose:</b> ${esc(desc)}</div>`;
+      }
     }
 
     const roomObj = state.rooms.find(r => r.name === b.room);
@@ -173,6 +186,7 @@ function renderAgenda(bookings, date) {
             &nbsp;👤 ${esc(b.booked_by)}
           </div>
           ${attendeesHTML}
+          ${venueHTML}
           ${descriptionHTML}
           ${onlineHTML}
         </div>

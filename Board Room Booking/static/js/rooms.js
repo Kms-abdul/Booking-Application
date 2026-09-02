@@ -218,7 +218,18 @@ export async function openRoomPanel(roomName) {
         <div class="rp-now-meta">
           👤 ${esc(status.current_booking.booked_by)}<br/>
           🕐 ${status.current_booking.start_time}–${status.current_booking.end_time}
-          ${status.current_booking.description ? `<br/>📝 <b>Purpose:</b> ${esc(status.current_booking.description)}` : ''}
+          ${(() => {
+            let desc = status.current_booking.description;
+            if (!desc) return '';
+            let venueHTML = '';
+            if (desc.startsWith('Venue: ')) {
+              const parts = desc.split('\n\n');
+              venueHTML = `<br/>📍 <b>Venue:</b> ${esc(parts[0].substring(7).trim())}`;
+              desc = parts.slice(1).join('\n\n').trim();
+            }
+            const descHTML = desc ? `<br/>📝 <b>Purpose:</b> ${esc(desc)}` : '';
+            return venueHTML + descHTML;
+          })()}
         </div>
         ${status.current_booking.meeting_mode === 'online' && status.current_booking.meeting_link ? (() => {
           const parts = status.current_booking.meeting_link.split('|');
@@ -265,7 +276,19 @@ export async function loadRoomTimeline(roomName) {
         const url = parts[0];
         return ` <a href="${escAttr(url)}" target="_blank" style="display:inline-flex; align-items:center; padding:2px 6px; font-size:10px; font-weight:600; background:#e0e7ff; color:#4338ca; border-radius:4px; text-decoration:none; margin-left:6px">💻 Join Teams</a>`;
       })() : '';
-      const descHTML = b.description ? `<div style="font-size: 11px; color: var(--text-mute); margin-top: 4px; font-style: italic;">📝 <b>Purpose:</b> ${esc(b.description)}</div>` : '';
+      const descObj = (() => {
+        let desc = b.description;
+        if (!desc) return { venue: '', desc: '' };
+        let venue = '';
+        if (desc.startsWith('Venue: ')) {
+          const parts = desc.split('\n\n');
+          venue = parts[0].substring(7).trim();
+          desc = parts.slice(1).join('\n\n').trim();
+        }
+        return { venue, desc };
+      })();
+      const venueHTML = descObj.venue ? `<div style="font-size: 11px; color: var(--text-mute); margin-top: 4px; font-style: italic;">📍 <b>Venue:</b> ${esc(descObj.venue)}</div>` : '';
+      const descHTML = descObj.desc ? `<div style="font-size: 11px; color: var(--text-mute); margin-top: 4px; font-style: italic;">📝 <b>Purpose:</b> ${esc(descObj.desc)}</div>` : '';
       return `
         <div class="rp-timeline-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
           <div style="display: flex; align-items: center; width: 100%; justify-content: space-between; gap: 10px;">
@@ -275,6 +298,7 @@ export async function loadRoomTimeline(roomName) {
           <div class="rp-timeline-title" style="font-size: 0.86rem; font-weight: 500;">
             ${esc(b.title)} <span style="font-weight: normal; font-size: 0.78rem; color: var(--text-mute);">by ${esc(b.booked_by)}</span>
           </div>
+          ${venueHTML}
           ${descHTML}
         </div>`;
     }).join('');

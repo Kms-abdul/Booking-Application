@@ -143,7 +143,18 @@ def _build_booking_table(booking: dict) -> tuple[str, str]:
     Used in both confirmation and reminder emails.
     """
     attendees = (booking.get("attendees") or "").strip()
-    desc = (booking.get("description") or "").strip()
+    raw_desc = (booking.get("description") or "").strip()
+    
+    venue = ""
+    desc = raw_desc
+    if raw_desc.startswith("Venue: "):
+        parts = raw_desc.split("\n\n", 1)
+        venue = parts[0][7:].strip()
+        if len(parts) > 1:
+            desc = parts[1].strip()
+        else:
+            desc = ""
+
     meeting_mode = str(booking.get("meeting_mode", "") or "offline").strip().lower()
     meeting_link = str(booking.get("meeting_link", "") or "").strip()
 
@@ -153,9 +164,10 @@ def _build_booking_table(booking: dict) -> tuple[str, str]:
         f"  Title     : {booking['title']}\n"
         f"  Booked by : {booking['booked_by']}\n"
         + (f"  Attendees : {attendees}\n" if attendees else "")
+        + (f"  Venue     : {venue}\n" if venue else "")
         + (f"  Purpose   : {desc}\n" if desc else "")
         + f"  Date      : {booking['date']}\n"
-        f"  Time      : {booking['start_time']} – {booking['end_time']}\n"
+        + f"  Time      : {booking['start_time']} – {booking['end_time']}\n"
     )
 
     teams_details_plain = ""
@@ -203,25 +215,29 @@ def _build_booking_table(booking: dict) -> tuple[str, str]:
 
     plain += teams_details_plain
 
-    attendees_row = (
-        f"""
-        <tr>
-          <td style="padding:10px 14px;font-weight:600;color:#555">Attendees</td>
-          <td style="padding:10px 14px">{attendees}</td>
-        </tr>"""
-        if attendees
-        else ""
-    )
+    # Dynamically build remaining rows for proper zebra striping
+    remaining_rows_data = []
+    if attendees:
+        remaining_rows_data.append(("Attendees", attendees))
+    if venue:
+        remaining_rows_data.append(("Venue", venue))
+    if desc:
+        remaining_rows_data.append(("Purpose", desc))
+    
+    remaining_rows_data.append(("Date", booking['date']))
+    remaining_rows_data.append(("Time", f"{booking['start_time']} – {booking['end_time']}"))
 
-    desc_row = (
-        f"""
-        <tr style="background:#f4f4f8">
-          <td style="padding:10px 14px;font-weight:600;color:#555">Purpose</td>
-          <td style="padding:10px 14px">{desc}</td>
+    remaining_rows_html = ""
+    # "Booked by" was white, so next row should be #f4f4f8
+    use_gray = True
+    for label, val in remaining_rows_data:
+        bg_style = ' style="background:#f4f4f8"' if use_gray else ''
+        remaining_rows_html += f"""
+        <tr{bg_style}>
+          <td style="padding:10px 14px;font-weight:600;color:#555">{label}</td>
+          <td style="padding:10px 14px">{val}</td>
         </tr>"""
-        if desc
-        else ""
-    )
+        use_gray = not use_gray
 
     html = f"""
       <table cellpadding="8" cellspacing="0"
@@ -243,18 +259,7 @@ def _build_booking_table(booking: dict) -> tuple[str, str]:
           <td style="padding:10px 14px;font-weight:600;color:#555">Booked by</td>
           <td style="padding:10px 14px">{booking['booked_by']}</td>
         </tr>
-        {attendees_row}
-        {desc_row}
-        <tr style="background:#f4f4f8">
-          <td style="padding:10px 14px;font-weight:600;color:#555">Date</td>
-          <td style="padding:10px 14px">{booking['date']}</td>
-        </tr>
-        <tr>
-          <td style="padding:10px 14px;font-weight:600;color:#555">Time</td>
-          <td style="padding:10px 14px">
-            {booking['start_time']} – {booking['end_time']}
-          </td>
-        </tr>
+        {remaining_rows_html}
       </table>
       {teams_details_html}
     """

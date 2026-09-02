@@ -5,12 +5,23 @@ import { loadStatus } from './rooms.js';
 
 export function populateBookForm() {
   const sel = document.getElementById('book-room');
+  const modeEl = document.getElementById('book-mode');
+  const mode = modeEl ? modeEl.value : 'offline';
+  const prevValue = sel.value;
+
   sel.innerHTML = ''; 
 
-  const floors = [...new Set(state.rooms.map(r => r.floor))].sort((a, b) => a - b);
+  const floors = [...new Set(state.rooms.map(r => r.floor))].sort((a, b) => {
+    if (a === 'Online') return 1;
+    if (b === 'Online') return -1;
+    return a - b;
+  });
+
   floors.forEach(f => {
+    if (mode !== 'online' && f === 'Online') return;
+
     const grp = document.createElement('optgroup');
-    grp.label = `Floor ${f}`;
+    grp.label = f === 'Online' ? 'Online Rooms' : `Floor ${f}`;
     state.rooms.filter(r => r.floor === f).forEach(r => {
       const opt = document.createElement('option');
       opt.value = r.name;
@@ -19,6 +30,23 @@ export function populateBookForm() {
     });
     sel.appendChild(grp);
   });
+
+  if (prevValue && sel.querySelector(`option[value="${prevValue}"]`)) {
+    sel.value = prevValue;
+  }
+}
+
+export function onMeetingModeChange() {
+  populateBookForm();
+  const mode = document.getElementById('book-mode').value;
+  const venueGroup = document.getElementById('venue-group');
+  if (venueGroup) {
+    if (mode === 'online') {
+      venueGroup.classList.remove('hidden');
+    } else {
+      venueGroup.classList.add('hidden');
+    }
+  }
 }
 
 export async function verifyUser() {
@@ -240,9 +268,16 @@ export async function submitBooking(e) {
   const username = document.getElementById('book-username').value.trim();
   const password = document.getElementById('book-password').value;
 
+  let desc = (document.getElementById('book-description') ? document.getElementById('book-description').value : '').trim();
+  const venueEl = document.getElementById('book-venue');
+  const mode = modeEl ? modeEl.value : 'offline';
+  if (mode === 'online' && venueEl && venueEl.value.trim()) {
+      desc = `Venue: ${venueEl.value.trim()}\n\n${desc}`.trim();
+  }
+
   const payload = {
     room: document.getElementById('book-room').value,
-    meeting_mode: (modeEl ? modeEl.value : 'offline'),
+    meeting_mode: mode,
     title: document.getElementById('book-title').value.trim(),
     booked_by: document.getElementById('book-name').value.trim(),
     attendees: (attEl ? attEl.value : '').trim(),
@@ -254,7 +289,7 @@ export async function submitBooking(e) {
     end_time: document.getElementById('book-end').value,
     username: username,
     password: password,
-    description: (document.getElementById('book-description') ? document.getElementById('book-description').value : '').trim(),
+    description: desc,
   };
 
   if (!payload.room) return showFieldError(errorEl, 'Please select a room.');
@@ -291,6 +326,7 @@ export async function submitBooking(e) {
       });
       document.getElementById('book-username').value = '';
       document.getElementById('book-password').value = '';
+      if (document.getElementById('book-venue')) document.getElementById('book-venue').value = '';
       document.getElementById('booking-form').classList.add('hidden');
       document.getElementById('admin-login-section').classList.remove('hidden');
       initDateDefaults();

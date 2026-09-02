@@ -288,18 +288,25 @@
         </div>
 
         <div class="form-group">
+          <label for="book-mode">Meeting Mode *</label>
+          <select id="book-mode" required onchange="window.onMeetingModeChange()">
+            <option value="offline">Offline (In-person)</option>
+            <option value="online">Online (Microsoft Teams)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
           <label for="book-room">Venue*</label> <!-- Room name as replacing Venue-->
           <select id="book-room" required>
             <option value="">Select a room…</option>
           </select>
         </div>
 
-        <div class="form-group">
-          <label for="book-mode">Meeting Mode *</label>
-          <select id="book-mode" required>
-            <option value="offline">Offline (In-person)</option>
-            <option value="online">Online (Microsoft Teams)</option>
-          </select>
+
+
+        <div class="form-group hidden" id="venue-group">
+          <label for="book-venue">Attendees Venue (For Online)</label>
+          <input id="book-venue" type="text" placeholder="e.g. Branch Name, Office Location" />
         </div>
 
         <div class="form-group">
@@ -429,10 +436,15 @@
 
       <div class="form-group">
         <label for="edit-mode">Meeting Mode</label>
-        <select id="edit-mode" class="modal-input">
+        <select id="edit-mode" class="modal-input" onchange="window.onEditMeetingModeChange()">
           <option value="offline">Offline (In-person)</option>
           <option value="online">Online (Microsoft Teams)</option>
         </select>
+      </div>
+
+      <div class="form-group hidden" id="edit-venue-group">
+        <label for="edit-venue">Attendees Venue (For Online)</label>
+        <input id="edit-venue" type="text" class="modal-input" placeholder="e.g. Branch Name, Office Location" />
       </div>
       <div class="form-row">
         <div class="form-group">

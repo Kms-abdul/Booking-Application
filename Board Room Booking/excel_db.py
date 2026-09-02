@@ -301,6 +301,22 @@ def ensure_db():
                 ws_u.append(USERS_HEADERS)
                 ws_u.append([config.ADMIN_USERNAME, "admin@example.com", config.ADMIN_PASSWORD, "admin", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
                 _save_wb(wb)
+
+            # Ensure all config.ROOMS exist in the Rooms sheet
+            ws_r = wb[ROOMS_SHEET]
+            existing_room_names = set()
+            for row in ws_r.iter_rows(min_row=2, max_col=1, values_only=True):
+                if row[0]:
+                    existing_room_names.add(str(row[0]).strip())
+                    
+            added_rooms = False
+            for r_conf in config.ROOMS:
+                if r_conf["name"] not in existing_room_names:
+                    ws_r.append([r_conf["name"], r_conf["color"], "", r_conf.get("floor", 0), r_conf.get("teams_link", "")])
+                    added_rooms = True
+            
+            if added_rooms:
+                _save_wb(wb)
  
  
 # --- Rooms ------------------------------------------------------------------

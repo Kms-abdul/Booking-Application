@@ -24,6 +24,16 @@ ROOMS = [
 
     {"name": "Mohammed Yousuf Hussain - Training Room",  "color": "#32d2dd", "floor":5, "teams_link": ""},   # Cyan  
     {"name": "AL-Ansar(Audit) - Conference Room",  "color": "#ff0000", "floor":5, "teams_link": ""},   # Red  
+
+    # Online virtual rooms
+    {"name": "BADAR - CHAIRMAN'S OFFICE",  "color": "#4338ca", "floor": "Online", "teams_link": ""},
+    {"name": "QUBA   - VICE CHAIRPERSON'S OFFICE",  "color": "#4338ca", "floor": "Online", "teams_link": ""},
+    {"name": "AQSA  - MANAGING DIRECTOR'S OFFICE",  "color": "#4338ca", "floor": "Online", "teams_link": ""},
+    {"name": "HUDAIBIA - MANAGING DIRECTOR'S OFFICE",  "color": "#4338ca", "floor": "Online", "teams_link": ""},
+    {"name": "Work Station -1",  "color": "#4338ca", "floor": "Online", "teams_link": ""},
+    {"name": "Work Station -2",  "color": "#4338ca", "floor": "Online", "teams_link": ""},
+    {"name": "Work Station -3",  "color": "#4338ca", "floor": "Online", "teams_link": ""},
+    {"name": "Work Station -4",  "color": "#4338ca", "floor": "Online", "teams_link": ""},
 ]
 
 # --- Working Hours -----------------------------------------------------------

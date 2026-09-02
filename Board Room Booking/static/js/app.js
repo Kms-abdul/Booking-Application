@@ -35,6 +35,9 @@ window.openCancel = modal.openCancel;
 window.closeCancel = modal.closeCancel;
 window.confirmCancel = modal.confirmCancel;
 
+window.onMeetingModeChange = booking.onMeetingModeChange;
+window.onEditMeetingModeChange = modal.onEditMeetingModeChange;
+
 document.addEventListener('DOMContentLoaded', () => {
   ui.initDateDefaults();
   rooms.loadRooms().then(() => {

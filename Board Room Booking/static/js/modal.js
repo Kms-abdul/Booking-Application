@@ -20,7 +20,14 @@ export function openEdit(bookingId) {
       document.getElementById('edit-attendees-emails').value = b.attendee_emails || '';
       document.getElementById('edit-mode').value = b.meeting_mode || 'offline';
       document.getElementById('edit-cc-emails').value = b.cc_emails || '';
-      document.getElementById('edit-description').value = b.description || '';
+      let desc = b.description || '';
+      let venue = '';
+      if (desc.startsWith('Venue: ')) {
+        const parts = desc.split('\n\n');
+        venue = parts[0].substring(7).trim();
+        desc = parts.slice(1).join('\n\n').trim();
+      }
+      document.getElementById('edit-description').value = desc;
 
       setTimeout(() => {
         ['edit-attendees-emails', 'edit-cc-emails', 'edit-description'].forEach(id => {
@@ -31,10 +38,20 @@ export function openEdit(bookingId) {
 
       const sel = document.getElementById('edit-room');
       sel.innerHTML = '';
-      const floors = [...new Set(state.rooms.map(r => r.floor))].sort((a, b) => a - b);
+      
+      const floors = [...new Set(state.rooms.map(r => r.floor))].sort((a, b) => {
+        if (a === 'Online') return 1;
+        if (b === 'Online') return -1;
+        return a - b;
+      });
+      
+      const mode = b.meeting_mode || 'offline';
+      
       floors.forEach(f => {
+        if (mode !== 'online' && f === 'Online') return;
+
         const grp = document.createElement('optgroup');
-        grp.label = `Floor ${f}`;
+        grp.label = f === 'Online' ? 'Online Rooms' : `Floor ${f}`;
         state.rooms.filter(r => r.floor === f).forEach(r => {
           const opt = document.createElement('option');
           opt.value = r.name;
@@ -44,6 +61,18 @@ export function openEdit(bookingId) {
         });
         sel.appendChild(grp);
       });
+      
+      const editVenueGroup = document.getElementById('edit-venue-group');
+      if (editVenueGroup) {
+        if (mode === 'online') {
+          editVenueGroup.classList.remove('hidden');
+        } else {
+          editVenueGroup.classList.add('hidden');
+        }
+      }
+      
+      const editVenueEl = document.getElementById('edit-venue');
+      if (editVenueEl) editVenueEl.value = venue;
     });
 
   document.getElementById('edit-username').value = '';
@@ -56,6 +85,47 @@ export function openEdit(bookingId) {
 export function closeEdit() {
   document.getElementById('edit-modal').classList.add('hidden');
   state.editId = null;
+}
+
+export function onEditMeetingModeChange() {
+  const mode = document.getElementById('edit-mode').value;
+  const sel = document.getElementById('edit-room');
+  const prevValue = sel.value;
+  
+  sel.innerHTML = '';
+  
+  const floors = [...new Set(state.rooms.map(r => r.floor))].sort((a, b) => {
+    if (a === 'Online') return 1;
+    if (b === 'Online') return -1;
+    return a - b;
+  });
+  
+  floors.forEach(f => {
+    if (mode !== 'online' && f === 'Online') return;
+
+    const grp = document.createElement('optgroup');
+    grp.label = f === 'Online' ? 'Online Rooms' : `Floor ${f}`;
+    state.rooms.filter(r => r.floor === f).forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.name;
+      opt.textContent = r.name;
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  });
+  
+  if (prevValue && sel.querySelector(`option[value="${prevValue}"]`)) {
+    sel.value = prevValue;
+  }
+  
+  const editVenueGroup = document.getElementById('edit-venue-group');
+  if (editVenueGroup) {
+    if (mode === 'online') {
+      editVenueGroup.classList.remove('hidden');
+    } else {
+      editVenueGroup.classList.add('hidden');
+    }
+  }
 }
 
 export async function confirmEdit() {
@@ -79,17 +149,24 @@ export async function confirmEdit() {
   label.classList.add('hidden');
   spinner.classList.remove('hidden');
 
+  let desc = document.getElementById('edit-description').value.trim();
+  const editVenueEl = document.getElementById('edit-venue');
+  const mode = document.getElementById('edit-mode').value;
+  if (mode === 'online' && editVenueEl && editVenueEl.value.trim()) {
+      desc = `Venue: ${editVenueEl.value.trim()}\n\n${desc}`.trim();
+  }
+
   const payload = {
     username: uname,
     password: pwd,
     room: document.getElementById('edit-room').value,
-    meeting_mode: document.getElementById('edit-mode').value,
+    meeting_mode: mode,
     start_time: document.getElementById('edit-start').value,
     end_time: document.getElementById('edit-end').value,
     attendees: document.getElementById('edit-attendees').value.trim(),
     attendee_emails: document.getElementById('edit-attendees-emails').value.trim(),
     cc_emails: document.getElementById('edit-cc-emails').value.trim(),
-    description: document.getElementById('edit-description').value.trim(),
+    description: desc,
   };
 
   try {
